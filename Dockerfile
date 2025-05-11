@@ -25,7 +25,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 PACKAGES=(
   # Basic build system:
-  autoconf build-essential busybox ca-cetificates curl dialog dropbear pkg-config
+  autoconf build-essential busybox ca-certificates curl dialog dropbear pkg-config
   # Asterisk: basic requirements:
   libedit-dev libjansson-dev libsqlite3-dev uuid-dev dahdi-linux linux-source
   # PHP extension requirements:

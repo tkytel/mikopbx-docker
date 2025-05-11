@@ -29,7 +29,9 @@ apt-get -y install \
   build-essential \
   busybox \
   ca-certificates \
+  linux-headers-generic \
   linux-image-generic \
+  linux-source \
   libevent-dev \
   libldap2-dev \
   libpcre3-dev \

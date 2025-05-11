@@ -64,10 +64,7 @@ ln -s /usr/www/resources/rootfs/sbin/crash_asterisk /sbin/crash_asterisk
 
 ln -s /etc/rc/debian/mikopbx_iptables /etc/init.d/mikopbx-iptables
 
-CTL_CMD='systemctl'
-which "$CTL_CMD" 2>/dev/null || CTL_CMD=''
-if [ ! "${CTL_CMD}x" = 'x' ]; then
-  # Docker doesn't have systemctl
+if command -v systemctl &>/dev/null; then
   ln -s /etc/rc/debian/mikopbx_lan_dhcp /etc/dhcp/dhclient-enter-hooks.d/mikopbx_lan_dhcp
   update-rc.d mikopbx defaults
   systemctl restart mikopbx

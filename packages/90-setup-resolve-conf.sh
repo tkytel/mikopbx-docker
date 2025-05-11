@@ -1,10 +1,7 @@
 #!/bin/bash
 set -eux
 
-CTL_CMD='systemctl'
-which "$CTL_CMD" 2>/dev/null || CTL_CMD=''
-if [ ! "${CTL_CMD}x" = 'x' ]; then
-  # Setting DNS
+if command -v systemctl &>/dev/null; then
   rm -rf /etc/resolv.conf 2>/dev/null
   ln -svi /run/systemd/resolve/resolv.conf /etc/resolv.conf
   echo "[Resolve]" >/tmp/resolved.conf

@@ -1,10 +1,14 @@
 #!/bin/bash
 set -eux
 
-NGINX_VERSION='1.14.0'
-NGINX_LUA_M_VERSION='0.10.20'
-NGINX_PUSH_M_VERSION='0.5.4'
-NGINX_DEV_KIT_VERSION='0.3.0'
+# https://github.com/nginx/nginx/releases
+NGINX_VERSION='1.28.0'
+# https://github.com/openresty/lua-nginx-module/tags
+NGINX_LUA_M_VERSION='0.10.28'
+# https://github.com/wandenberg/nginx-push-stream-module/tags
+NGINX_PUSH_M_VERSION='0.6.0'
+# https://github.com/vision5/ngx_devel_kit/releases
+NGINX_DEV_KIT_VERSION='0.3.4'
 
 LIB_URL="http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz"
 srcDirName=$(downloadFile "$LIB_URL")
@@ -16,16 +20,6 @@ LIB_URL_KIT="https://github.com/vision5/ngx_devel_kit/archive/refs/tags/v${NGINX
 srcDirNameKit=$(downloadFile "$LIB_URL_KIT")
 pushd "$srcDirName"
 
-PATCH_PATH="${ROOT_DIR}/packages/patches/nginx"
-if [ -d "$PATCH_PATH" ]; then
-  for filename in "$PATCH_PATH"/*.patch; do
-    [ -e "$filename" ] || continue
-    echo "Starting $filename"
-    (
-      patch -p0 -i "$filename"
-    )
-  done
-fi
 export LUAJIT_LIB=/usr/
 export LUAJIT_INC=/usr/include/luajit-2.1/
 ./configure --prefix=/usr --user=nginx --group=nginx --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/error.log \

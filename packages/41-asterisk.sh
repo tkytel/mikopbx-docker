@@ -1,8 +1,9 @@
 #!/bin/bash
 set -eux
 
-LIB_VERSION='16.16.2'
-LIB_URL="http://downloads.asterisk.org/pub/telephony/asterisk/releases/asterisk-${LIB_VERSION}.tar.gz"
+# https://github.com/asterisk/asterisk/releases
+LIB_VERSION='16.30.1'
+LIB_URL="https://github.com/asterisk/asterisk/releases/download/${LIB_VERSION}/asterisk-${LIB_VERSION}.tar.gz"
 LIB_NAME='asterisk'
 srcDirName=$(downloadFile "$LIB_URL")
 pushd "$srcDirName"

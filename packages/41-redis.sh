@@ -1,7 +1,8 @@
 #!/bin/bash
 set -eux
 
-LIB_VERSION='6.2.1'
+# https://github.com/redis/redis/releases
+LIB_VERSION='6.2.18'
 LIB_URL="https://download.redis.io/releases/redis-${LIB_VERSION}.tar.gz"
 srcDirName=$(downloadFile "$LIB_URL")
 pushd "$srcDirName"

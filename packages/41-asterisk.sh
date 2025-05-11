@@ -8,7 +8,8 @@ LIB_NAME='asterisk'
 srcDirName=$(downloadFile "$LIB_URL")
 pushd "$srcDirName"
 
-PATCH_PATH="${ROOT_DIR}/packages/patches/${LIB_NAME}"
+ROOT_DIR="$(realpath "$(dirname "$0")")"
+PATCH_PATH="$ROOT_DIR/patches/${LIB_NAME}"
 if [ -d "$PATCH_PATH" ]; then
   for filename in "$PATCH_PATH"/*.patch; do
     [ -e "$filename" ] || continue

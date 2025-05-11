@@ -4,10 +4,10 @@
   <https://github.com/eggplants/mikopbx-docker/actions/workflows/release.yaml/badge.svg>
   )](
   <https://github.com/eggplants/mikopbx-docker/actions/workflows/release.yaml>
-) [![pre-commit.ci status](
-  <https://results.pre-commit.ci/badge/github/eggplants/mikopbx-docker/master.svg>
+) [![pre-commit](
+  <https://github.com/eggplants/mikopbx-docker/actions/workflows/pre-commit.yaml/badge.svg>
   )](
-  <https://results.pre-commit.ci/latest/github/eggplants/mikopbx-docker/master>
+  <https://github.com/eggplants/mikopbx-docker/actions/workflows/pre-commit.yaml>
 )
 
 ## How to build

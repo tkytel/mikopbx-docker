@@ -29,8 +29,7 @@ apt-get -y install \
   build-essential \
   busybox \
   ca-certificates \
-  "linux-headers-$(dpkg --print-architecture)" \
-  "linux-image-$(dpkg --print-architecture)" \
+  dahdi-linux \
   linux-source \
   libevent-dev \
   libldap2-dev \
@@ -42,6 +41,7 @@ apt-get -y install \
   libyaml-dev \
   libzip-dev \
   pkg-config
+  # "linux-headers-$(uname -r)" \
 apt-get clean
 rm -rf /var/lib/apt/lists/*
 

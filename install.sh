@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ROOT_DIR="$(realpath "$(dirname "$0")")"
 . "${ROOT_DIR}/libs/functions.sh"

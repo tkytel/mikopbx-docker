@@ -6,7 +6,7 @@ LIB_URL="https://download.redis.io/releases/redis-${LIB_VERSION}.tar.gz"
 srcDirName=$(downloadFile "$LIB_URL")
 pushd "$srcDirName"
 
-make PREFIX=/
+make -j"$(nproc)" PREFIX=/
 make install
 
 popd

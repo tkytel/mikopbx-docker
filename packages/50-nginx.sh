@@ -41,7 +41,9 @@ export LUAJIT_INC=/usr/local/include/luajit-2.1/
   --add-module="$(realpath "$srcDirNameKit")" \
   --add-module="$(realpath "$srcDirNamePush")" \
   --add-module="$(realpath "$srcDirNameLua")"
-make && make install
+
+make -j"$(nproc)"
+make install
 
 popd
 

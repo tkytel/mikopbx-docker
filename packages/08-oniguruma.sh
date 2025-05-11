@@ -9,7 +9,7 @@ pushd "$srcDirName"
 
 autoreconf -vfi
 ./configure
-make
+make -j"$(nproc)"
 make install
 
 popd

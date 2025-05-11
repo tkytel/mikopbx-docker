@@ -67,7 +67,7 @@ ln -s /etc/rc/debian/mikopbx_iptables /etc/init.d/mikopbx-iptables
 CTL_CMD='systemctl'
 which "$CTL_CMD" 2>/dev/null || CTL_CMD=''
 if [ ! "${CTL_CMD}x" = 'x' ]; then
-  # в Docker нет systemctl
+  # Docker doesn't have systemctl
   ln -s /etc/rc/debian/mikopbx_lan_dhcp /etc/dhcp/dhclient-enter-hooks.d/mikopbx_lan_dhcp
   update-rc.d mikopbx defaults
   systemctl restart mikopbx

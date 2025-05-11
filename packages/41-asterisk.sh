@@ -33,7 +33,7 @@ menuselect/menuselect --enable app_meetme \
   --enable CORE-SOUNDS-RU-ALAW \
   --enable CORE-SOUNDS-EN-ULAW menuselect.makeopts
 adduser --system --group --home /var/lib/asterisk --no-create-home --disabled-password --gecos "MIKO PBX" asterisk
-make
+make -j"$(nproc)"
 make install
 make config
 mkdir -p /storage/usbdisk1/mikopbx/persistence \

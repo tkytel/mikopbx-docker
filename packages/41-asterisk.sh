@@ -23,17 +23,33 @@ contrib/scripts/get_mp3_source.sh
 # contrib/scripts/install_prereq install
 ./configure
 make menuselect.makeopts
-menuselect/menuselect --enable app_meetme \
-  --enable format_mp3 \
-  --enable res_fax \
-  --enable app_macro \
-  --enable codec_opus \
-  --enable codec_silk \
-  --enable codec_siren7 \
-  --enable codec_siren14 \
-  --enable codec_g729a \
-  --enable CORE-SOUNDS-RU-ALAW \
-  --enable CORE-SOUNDS-EN-ULAW menuselect.makeopts
+case "$(dpkg --print-architecture)" in
+amd64)
+  menuselect/menuselect \
+    --enable app_meetme \
+    --enable format_mp3 \
+    --enable res_fax \
+    --enable app_macro \
+    --enable codec_opus \
+    --enable codec_silk \
+    --enable codec_siren7 \
+    --enable codec_siren14 \
+    --enable codec_g729a \
+    --enable CORE-SOUNDS-RU-ALAW \
+    --enable CORE-SOUNDS-EN-ULAW \
+    menuselect.makeopts
+  ;;
+*)
+  menuselect/menuselect \
+    --enable app_meetme \
+    --enable format_mp3 \
+    --enable res_fax \
+    --enable app_macro \
+    --enable CORE-SOUNDS-RU-ALAW \
+    --enable CORE-SOUNDS-EN-ULAW \
+    menuselect.makeopts
+  ;;
+esac
 adduser --system --group --home /var/lib/asterisk --no-create-home --disabled-password --gecos "MIKO PBX" asterisk
 make -j"$(nproc)"
 make install

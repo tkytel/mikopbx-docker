@@ -1,18 +1,18 @@
 #!/bin/bash
 set -eux
 
-LIB_VERSION='6.9.7.1';
-LIB_URL="https://github.com/kkos/oniguruma/releases/download/v${LIB_VERSION}/onig-${LIB_VERSION}.tar.gz";
+LIB_VERSION='6.9.7.1'
+LIB_URL="https://github.com/kkos/oniguruma/releases/download/v${LIB_VERSION}/onig-${LIB_VERSION}.tar.gz"
 
-srcDirName=$(downloadFile "$LIB_URL");
+srcDirName=$(downloadFile "$LIB_URL")
 (
-  cd "$srcDirName" || exit;
+  cd "$srcDirName" || exit
   {
-    autoreconf -vfi;
-    ./configure;
-    make;
-    make install;
-  } >> "$LOG_FILE" 2>> "$LOG_FILE";
+    autoreconf -vfi
+    ./configure
+    make
+    make install
+  } >>"$LOG_FILE" 2>>"$LOG_FILE"
 )
 
-rm -rf "$srcDirName";
+rm -rf "$srcDirName"

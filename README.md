@@ -1,5 +1,15 @@
 # mikopbx-docker
 
+[![Release Package](
+  <https://github.com/eggplants/mikopbx-docker/actions/workflows/release.yaml/badge.svg>
+  )](
+  <https://github.com/eggplants/mikopbx-docker/actions/workflows/release.yaml>
+) [![pre-commit.ci status](
+  <https://results.pre-commit.ci/badge/github/eggplants/mikopbx-docker/master.svg>
+  )](
+  <https://results.pre-commit.ci/latest/github/eggplants/mikopbx-docker/master>
+)
+
 ## How to build
 
 ```bash

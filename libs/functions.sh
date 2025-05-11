@@ -17,71 +17,67 @@
 # If not, see <https://www.gnu.org/licenses/>.
 #
 set -eux
-downloadFile()
-{
-	extensionUrl="$1";
-	${SUDO_CMD} curl -LO "$extensionUrl";
-	arName=$(basename "$extensionUrl");
-	srcDirName=$(tar -tf "${PWD}/${arName}" | cut -f 1 -d '/' | sort -u | grep -v package.xml);
-	${SUDO_CMD} tar xzf "${PWD}/${arName}"
-  ${SUDO_CMD} rm -rf "${PWD}/${arName}";
-  realpath "$srcDirName";
+downloadFile() {
+  extensionUrl="$1"
+  ${SUDO_CMD} curl -LO "$extensionUrl"
+  arName=$(basename "$extensionUrl")
+  srcDirName=$(tar -tf "${PWD}/${arName}" | cut -f 1 -d '/' | sort -u | grep -v package.xml)
+  ${SUDO_CMD} tar xzf "${PWD}/${arName}"
+  ${SUDO_CMD} rm -rf "${PWD}/${arName}"
+  realpath "$srcDirName"
 }
 
-installPhpExtension()
-{
-	extensionName="$1";
-	extensionUrl="$2";
-	extensionPriority="$3";
-	extensionPrefix="$4";
-	extensionConfOpt="$5";
+installPhpExtension() {
+  extensionName="$1"
+  extensionUrl="$2"
+  extensionPriority="$3"
+  extensionPrefix="$4"
+  extensionConfOpt="$5"
 
-  srcDirName=$(downloadFile "$extensionUrl");
-	makePhpExtension "${srcDirName}" "$extensionConfOpt"
-	enablePhpExtension "$extensionName" "$extensionPriority" "$extensionPrefix" 
-	${SUDO_CMD} rm -rf "${srcDirName}"
+  srcDirName=$(downloadFile "$extensionUrl")
+  makePhpExtension "${srcDirName}" "$extensionConfOpt"
+  enablePhpExtension "$extensionName" "$extensionPriority" "$extensionPrefix"
+  ${SUDO_CMD} rm -rf "${srcDirName}"
 }
 
-enablePhpExtension()
-{
-	libFileName="$1";
-	priority="$2";
-	prefix="$3";
+enablePhpExtension() {
+  libFileName="$1"
+  priority="$2"
+  prefix="$3"
 
-  modDir="/etc/php/$PHP_VERSION/mods-available";
+  modDir="/etc/php/$PHP_VERSION/mods-available"
   if [ ! -d "$modDir" ]; then
-    realModDir='/etc/php.d';
-    mkdir -p "$realModDir";
+    realModDir='/etc/php.d'
+    mkdir -p "$realModDir"
   else
-    realModDir=$modDir;
-  fi;
-	${SUDO_CMD} echo "${prefix}extension=${libFileName}.so" > "/tmp/${libFileName}.ini";
-	${SUDO_CMD} mv "/tmp/${libFileName}.ini" "${realModDir}/${libFileName}.ini";
+    realModDir=$modDir
+  fi
+  ${SUDO_CMD} echo "${prefix}extension=${libFileName}.so" >"/tmp/${libFileName}.ini"
+  ${SUDO_CMD} mv "/tmp/${libFileName}.ini" "${realModDir}/${libFileName}.ini"
   if [ ! -d "$modDir" ]; then
-    return;
-  fi;
+    return
+  fi
 
-	${SUDO_CMD} rm -rf "/etc/php/$PHP_VERSION/fpm/conf.d/${priority}-${libFileName}.ini" "/etc/php/$PHP_VERSION/cli/conf.d/${priority}-${libFileName}.ini";
-	links="$(find "/etc/php/$PHP_VERSION/cli/" -lname "/etc/php/$PHP_VERSION/mods-available/${libFileName}.ini")";
-	if [ 'x' = "${links}x" ];then
-    ${SUDO_CMD} ln -s "/etc/php/$PHP_VERSION/mods-available/${libFileName}.ini" "/etc/php/$PHP_VERSION/fpm/conf.d/${priority}-${libFileName}.ini";
-    ${SUDO_CMD} ln -s "/etc/php/$PHP_VERSION/mods-available/${libFileName}.ini" "/etc/php/$PHP_VERSION/cli/conf.d/${priority}-${libFileName}.ini";
-	fi
+  ${SUDO_CMD} rm -rf "/etc/php/$PHP_VERSION/fpm/conf.d/${priority}-${libFileName}.ini" "/etc/php/$PHP_VERSION/cli/conf.d/${priority}-${libFileName}.ini"
+  links="$(find "/etc/php/$PHP_VERSION/cli/" -lname "/etc/php/$PHP_VERSION/mods-available/${libFileName}.ini")"
+  if [ 'x' = "${links}x" ]; then
+    ${SUDO_CMD} ln -s "/etc/php/$PHP_VERSION/mods-available/${libFileName}.ini" "/etc/php/$PHP_VERSION/fpm/conf.d/${priority}-${libFileName}.ini"
+    ${SUDO_CMD} ln -s "/etc/php/$PHP_VERSION/mods-available/${libFileName}.ini" "/etc/php/$PHP_VERSION/cli/conf.d/${priority}-${libFileName}.ini"
+  fi
 }
 
-makePhpExtension()
-{
-	srcDirName="$1";
-	confOptions="$2"
-	(
-	  cd "$srcDirName" || exit;
+makePhpExtension() {
+  srcDirName="$1"
+  confOptions="$2"
+  (
+    cd "$srcDirName" || exit
     {
-      ${SUDO_CMD} phpize;
-      ${SUDO_CMD} ./configure "$confOptions";
-      ${SUDO_CMD} make;
-      ${SUDO_CMD} make install;
-    } >> "$LOG_FILE" 2>> "$LOG_FILE";
-	)
+      ${SUDO_CMD} phpize
+      ${SUDO_CMD} ./configure "$confOptions"
+      ${SUDO_CMD} make
+      ${SUDO_CMD} make install
+    } >>"$LOG_FILE" 2>>"$LOG_FILE"
+  )
 }
 
 export makePhpExtension enablePhpExtension installPhpExtension

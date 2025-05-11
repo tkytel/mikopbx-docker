@@ -19,7 +19,7 @@
 set -eux
 
 usage() {
-cat <<EOF
+  cat <<EOF
 $0: a script to install distribution-specific prerequirement
 Usage: $0:                    Shows this message.
 Usage: $0 install             Really install.

@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 #
 # MikoPBX - free phone system for small business
 # Copyright © 2017-2021 Alexey Portnov and Nikolay Beketov
@@ -17,88 +17,43 @@
 # If not, see <https://www.gnu.org/licenses/>.
 #
 set -eux
+
 usage() {
-	echo "$0: a script to install distribution-specific prerequirement"
-	echo ""
-	echo "Usage: $0:                    Shows this message."
-	echo "Usage: $0 install             Really install."
+cat <<EOF
+$0: a script to install distribution-specific prerequirement
+Usage: $0:                    Shows this message.
+Usage: $0 install             Really install.
+EOF
 }
 
-# Basic build system:
-PACKAGES_DEBIAN="curl dialog dropbear build-essential pkg-config"
-# Asterisk: basic requirements:
-PACKAGES_DEBIAN="$PACKAGES_DEBIAN libedit-dev libjansson-dev libsqlite3-dev uuid-dev libxml2-dev"
-# Asterisk: for addons:
-PACKAGES_DEBIAN="$PACKAGES_DEBIAN libspeex-dev libspeexdsp-dev libogg-dev libvorbis-dev libasound2-dev portaudio19-dev libcurl4-openssl-dev xmlstarlet bison flex"
-PACKAGES_DEBIAN="$PACKAGES_DEBIAN libpq-dev unixodbc-dev libneon27-dev libgmime-2.6-dev liblua5.2-dev liburiparser-dev libxslt1-dev libssl-dev"
-PACKAGES_DEBIAN="$PACKAGES_DEBIAN libbluetooth-dev libradcli-dev freetds-dev libosptk-dev libjack-jackd2-dev bash"
-PACKAGES_DEBIAN="$PACKAGES_DEBIAN libsnmp-dev libiksemel-dev libcorosync-common-dev libcpg-dev libcfg-dev libnewt-dev libpopt-dev libical-dev libspandsp-dev"
-PACKAGES_DEBIAN="$PACKAGES_DEBIAN libresample1-dev libc-client2007e-dev binutils-dev libsrtp2-dev libsrtp2-dev libgsm1-dev doxygen graphviz zlib1g-dev libldap2-dev"
-PACKAGES_DEBIAN="$PACKAGES_DEBIAN libcodec2-dev libfftw3-dev libsndfile1-dev libunbound-dev"
-# Asterisk: for the unpackaged below:
-PACKAGES_DEBIAN="$PACKAGES_DEBIAN wget subversion p7zip-full open-vm-tools sysstat dahdi-linux sox"
-PACKAGES_DEBIAN="$PACKAGES_DEBIAN bzip2 patch python-dev vlan git ntp sqlite3 curl w3m re2c lame libbz2-dev libgmp-dev libzip-dev"
-PACKAGES_DEBIAN="$PACKAGES_DEBIAN fail2ban sngrep tcpdump msmtp beanstalkd lua5.1-dev liblua5.1-0 libtonezone-dev libevent-dev libyaml-dev"
-PACKAGES_DEBIAN="$PACKAGES_DEBIAN linux-headers-$(uname -r)"
-case "$1" in
-install)
-	;;
-'')
-	usage
-	exit 0
-	;;
-*)
-	usage
-	exit 1
-	;;
-esac
-
-# Create ProgressBar function
-# Input is currentState($1) and totalState($2)
-ProgressBar() {
-	# Process data
-  _progress=$(echo "scale=1; 100*${1}/${2}" | busybox bc | sed -e 's/^\./0./' -e 's/^-\./-0./');
-  _done=$(echo "scale=1; 4*${_progress}/10" | busybox bc);
-  _left=$(echo "scale=1; 40 - $_done" | busybox bc);
-
-	# Build progressbar string lengths
-  _fill=$(printf "%${_done}s" | tr ' ' '#')
-  _empty=$(printf "%${_left}s")
-	
-	# Build progressbar strings and print the ProgressBar line
-	# shellcheck disable=SC2183
-	printf "\r%150s";
-	printf "\rProgress : [${_fill}${_empty}] ${_progress}%%. Now installing \e[1;32m${3}\e[0m. "
-}
-
-handle_debian() {
-	apt -y install lsb-release apt-transport-https ca-certificates > /dev/null 2> /dev/null;
-	if ! [ -x "$(command -v aptitude)" ]; then
-		apt-get install -y aptitude > /dev/null
-	fi
-	extra_packs="$PACKAGES_DEBIAN";
-	apt-get update > /dev/null
-	if [ x"$extra_packs" != "x" ] ; then
-			count_words=$(echo "$extra_packs" | wc -w);
-			i=0
-			for deb_pack in $extra_packs
-			do
-				i=$((i + 1));
-				ProgressBar "${i}" "${count_words}" "${deb_pack}";
-				# shellcheck disable=SC2039
-				echo -ne '\n' | apt-get install -y "$deb_pack" > /dev/null 2> /dev/null
-			done
-	fi
-}
+PACKAGES_DEBIAN=(
+  # Basic build system:
+  curl dialog dropbear build-essential pkg-config
+  # Asterisk: basic requirements:
+  libedit-dev libjansson-dev libsqlite3-dev uuid-dev libxml2-dev
+  # Asterisk: for addons:
+  libspeex-dev libspeexdsp-dev libogg-dev libvorbis-dev libasound2-dev portaudio19-dev libcurl4-openssl-dev xmlstarlet bison flex
+  libpq-dev unixodbc-dev libneon27-dev libgmime-2.6-dev liblua5.2-dev liburiparser-dev libxslt1-dev libssl-dev
+  libbluetooth-dev libradcli-dev freetds-dev libosptk-dev libjack-jackd2-dev bash
+  libsnmp-dev libiksemel-dev libcorosync-common-dev libcpg-dev libcfg-dev libnewt-dev libpopt-dev libical-dev libspandsp-dev
+  libresample1-dev libc-client2007e-dev binutils-dev libsrtp2-dev libsrtp2-dev libgsm1-dev doxygen graphviz zlib1g-dev libldap2-dev
+  libcodec2-dev libfftw3-dev libsndfile1-dev libunbound-dev
+  # Asterisk: for the unpackaged below:
+  wget subversion p7zip-full open-vm-tools sysstat dahdi-linux sox
+  bzip2 patch python-dev vlan git ntp sqlite3 curl w3m re2c lame libbz2-dev libgmp-dev libzip-dev
+  fail2ban sngrep tcpdump msmtp beanstalkd lua5.1-dev liblua5.1-0 libtonezone-dev libevent-dev libyaml-dev
+)
 
 # The distributions we do support:
-if [ -r /etc/debian_version ]; then
-	handle_debian
+if [[ -r /etc/debian_version ]]; then
+  apt-get install -y "${PACKAGES_DEBIAN[@]}"
+  apt-get clean
+  rm -rf /var/lib/apt/lists/*
 else
-	echo >&2 "$0: Only Debian is supported. Aborting."
-	exit 1;
+  echo >&2 "$0: Only Debian is supported. Aborting."
+  exit 1
 fi
 
-echo;
-echo "## $1 completed successfully";
-echo "####################################################";
+echo
+echo "## $1 completed successfully"
+echo "####################################################"

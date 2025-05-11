@@ -41,7 +41,6 @@ apt-get -y install \
   libyaml-dev \
   libzip-dev \
   pkg-config
-  # "linux-headers-$(uname -r)" \
 apt-get clean
 rm -rf /var/lib/apt/lists/*
 
@@ -50,6 +49,7 @@ ln -s /bin/busybox /bin/ps
 ln -s /bin/busybox /bin/ifconfig
 ln -s /bin/busybox /bin/ping
 ln -s /bin/busybox /bin/route
+ln -sf /bin/busybox /bin/killall
 ln -s /usr/sbin/cron /usr/sbin/crond
 
 unset DEBIAN_FRONTEND

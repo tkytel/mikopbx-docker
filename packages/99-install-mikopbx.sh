@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eux
 
-if [[ -z ${MIKO_PBX_VERSION} ]]; then
+if [[ -z $MIKO_PBX_VERSION ]]; then
   MIKO_PBX_VERSION='dev-develop'
 fi
 

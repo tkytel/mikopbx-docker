@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eux
 
 LIB_VERSION='3.2.1';
 LIB_URL="https://github.com/igbinary/igbinary/archive/refs/tags/${LIB_VERSION}.tar.gz";

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eux
 
 LIB_VERSION='3.1.0';
 LIB_URL="https://downloads.asterisk.org/pub/telephony/dahdi-linux/dahdi-linux-${LIB_VERSION}.tar.gz";

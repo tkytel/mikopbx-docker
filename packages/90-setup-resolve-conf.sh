@@ -1,4 +1,6 @@
 #!/bin/bash
+set -eux
+
 CTL_CMD='systemctl'
 which "$CTL_CMD" 2> /dev/null || CTL_CMD='';
 if [ ! "${CTL_CMD}x" = 'x' ]; then

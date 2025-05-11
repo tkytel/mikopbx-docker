@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eux
 
 LIB_VERSION='2.9.5';
 LIB_URL="https://xdebug.org/files/xdebug-${LIB_VERSION}.tgz";

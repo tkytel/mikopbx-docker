@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eux
 
 LIB_VERSION='1.0.1';
 LIB_URL="https://github.com/jbboehr/php-psr/archive/v${LIB_VERSION}.tar.gz";

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eux
 
 LIB_VERSION='4.1.0';
 LIB_URL="https://github.com/phalcon/cphalcon/archive/v${LIB_VERSION}.tar.gz";

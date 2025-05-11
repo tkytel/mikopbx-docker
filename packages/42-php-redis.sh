@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eux
 
 LIB_VERSION='5.3.4';
 LIB_URL="https://github.com/phpredis/phpredis/archive/refs/tags/${LIB_VERSION}.tar.gz";

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eux
 
 LIB_VERSION='1.3.6';
 LIB_URL="https://github.com/zephir-lang/php-zephir-parser/archive/refs/tags/v${LIB_VERSION}.tar.gz";

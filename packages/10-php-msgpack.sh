@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eux
 
 LIB_VERSION='2.1.2';
 LIB_URL="https://github.com/msgpack/msgpack-php/archive/refs/tags/msgpack-${LIB_VERSION}.tar.gz";

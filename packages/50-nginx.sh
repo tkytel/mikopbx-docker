@@ -1,5 +1,6 @@
 #!/bin/bash
-#
+set -eux
+
 NGINX_VERSION='1.14.0';
 NGINX_LUA_M_VERSION='0.10.20';
 NGINX_PUSH_M_VERSION='0.5.4';

@@ -1,4 +1,6 @@
 #!/bin/bash
+set -eux
+
 (
 # Добавляем модуль 8021q в автозагрузку. Поддержка VLAN.
 module_8021q=$(grep 8021q </etc/modules);

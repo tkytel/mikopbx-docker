@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eux
 
 ARMOR_CMD='apparmor_parser'
 which "$ARMOR_CMD" 2> /dev/null || ARMOR_CMD='';

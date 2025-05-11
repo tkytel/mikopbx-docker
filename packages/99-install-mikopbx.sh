@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eux
 
 if [ "${MIKO_PBX_VERSION}x" = "x" ]; then
   MIKO_PBX_VERSION='dev-develop';

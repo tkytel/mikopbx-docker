@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eux
 
 LIB_VERSION='2.5.6';
 LIB_URL="https://pecl.php.net/get/event-${LIB_VERSION}.tgz";

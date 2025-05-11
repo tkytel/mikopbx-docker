@@ -28,9 +28,7 @@ jobs:
       id: meta
       with:
         images: ghcr.io/${{ github.repository }}
-        tags: |
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
+        tags: ${{ github.event.inputs.miko_pbx_version }}
     - uses: docker/login-action@v3
       with:
         registry: ghcr.io

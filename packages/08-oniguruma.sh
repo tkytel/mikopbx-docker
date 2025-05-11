@@ -6,11 +6,11 @@ LIB_URL="https://github.com/kkos/oniguruma/releases/download/v${LIB_VERSION}/oni
 
 srcDirName=$(downloadFile "$LIB_URL")
 pushd "$srcDirName"
-{
-  autoreconf -vfi
-  ./configure
-  make
-  make install
-} >>"$LOG_FILE" 2>>"$LOG_FILE"
+
+autoreconf -vfi
+./configure
+make
+make install
+
 popd
 rm -rf "$srcDirName"

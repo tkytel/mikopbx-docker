@@ -10,18 +10,16 @@ LIB_NAME='phalcon'
 curl -L 'https://github.com/zephir-lang/zephir/releases/download/0.12.21/zephir.phar' -o zephir
 chmod +x zephir
 srcDirName=$(downloadFile "$LIB_URL")
-(
-  cd "$srcDirName" || exit
-  {
-    memLimit="$(grep memory_limit </etc/php.ini)"
-    if [[ -z ${memLimit} ]]; then
-      echo 'memory_limit=-1' >>/etc/php.ini
-    fi
-    ../zephir fullclean
-    ../zephir build
-    cp ./ext/modules/phalcon.so "$(php-config --extension-dir)/"
-  } >>"$LOG_FILE" 2>>"$LOG_FILE"
-)
+pushd "$srcDirName"
 
+memLimit="$(grep memory_limit </etc/php.ini)"
+if [[ -z ${memLimit} ]]; then
+  echo 'memory_limit=-1' >>/etc/php.ini
+fi
+../zephir fullclean
+../zephir build
+cp ./ext/modules/phalcon.so "$(php-config --extension-dir)/"
+
+popd
 rm -rf "$srcDirName" ./zephir
 enablePhpExtension "$LIB_NAME" "$LIB_PRIORITY" "$LIB_PHP_MODULE_PREFIX_INI"

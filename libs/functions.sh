@@ -69,12 +69,12 @@ makePhpExtension() {
   srcDirName="$1"
   confOptions="$2"
   pushd "$srcDirName"
-  {
-    ${SUDO_CMD} phpize
-    ${SUDO_CMD} ./configure "$confOptions"
-    ${SUDO_CMD} make
-    ${SUDO_CMD} make install
-  } >>"$LOG_FILE" 2>>"$LOG_FILE"
+
+  ${SUDO_CMD} phpize
+  ${SUDO_CMD} ./configure "$confOptions"
+  ${SUDO_CMD} make
+  ${SUDO_CMD} make install
+
   popd
 }
 

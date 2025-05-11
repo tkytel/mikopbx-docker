@@ -41,7 +41,7 @@ PACKAGES=(
   wget subversion p7zip-full open-vm-tools sysstat dahdi-linux sox
   python3-dev vlan git ntp sqlite3 curl w3m lame libbz2-dev libgmp-dev libtonezone-dev
   fail2ban sngrep tcpdump msmtp beanstalkd
-  libluajit2-5.1-dev lua-resty-core lua-resty-lrucache
+  libluajit2-5.1-2 libluajit2-5.1-dev lua-resty-core lua-resty-lrucache
 )
 
 apt-get update

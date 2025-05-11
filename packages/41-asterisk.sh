@@ -5,7 +5,7 @@ LIB_VERSION='16.16.2'
 LIB_URL="http://downloads.asterisk.org/pub/telephony/asterisk/releases/asterisk-${LIB_VERSION}.tar.gz"
 LIB_NAME='asterisk'
 srcDirName=$(downloadFile "$LIB_URL")
-push "$srcDirName"
+pushd "$srcDirName"
 {
   PATCH_PATH="${ROOT_DIR}/packages/patches/${LIB_NAME}"
   if [ -d "$PATCH_PATH" ]; then
@@ -18,6 +18,7 @@ push "$srcDirName"
     done
   fi
   contrib/scripts/get_mp3_source.sh
+  # contrib/scripts/install_prereq install
   ./configure
   make menuselect.makeopts
   menuselect/menuselect --enable app_meetme \

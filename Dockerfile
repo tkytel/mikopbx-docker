@@ -88,6 +88,8 @@ EOF
 
 WORKDIR /root/install
 
+ENV PATH="$PATH:/sbin:/usr/sbin"
+
 COPY ./libs/ ./libs/
 COPY ./packages/ ./packages/
 COPY ./install.sh .

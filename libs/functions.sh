@@ -19,11 +19,10 @@
 set -eux
 downloadFile() {
   extensionUrl="$1"
-  ${SUDO_CMD} curl -LO "$extensionUrl"
+  curl -LO "$extensionUrl"
   arName=$(basename "$extensionUrl")
   srcDirName=$(tar -tf "${PWD}/${arName}" | cut -f 1 -d '/' | sort -u | grep -v package.xml)
-  ${SUDO_CMD} tar xzf "${PWD}/${arName}"
-  ${SUDO_CMD} rm -rf "${PWD}/${arName}"
+  tar xzf "${PWD}/${arName}" && rm "$_"
   realpath "$srcDirName"
 }
 
@@ -37,7 +36,7 @@ installPhpExtension() {
   srcDirName=$(downloadFile "$extensionUrl")
   makePhpExtension "${srcDirName}" "$extensionConfOpt"
   enablePhpExtension "$extensionName" "$extensionPriority" "$extensionPrefix"
-  ${SUDO_CMD} rm -rf "${srcDirName}"
+  rm -rf "${srcDirName}"
 }
 
 enablePhpExtension() {
@@ -52,17 +51,17 @@ enablePhpExtension() {
   else
     realModDir=$modDir
   fi
-  ${SUDO_CMD} echo "${prefix}extension=${libFileName}.so" >"/tmp/${libFileName}.ini"
-  ${SUDO_CMD} mv "/tmp/${libFileName}.ini" "${realModDir}/${libFileName}.ini"
+  echo "${prefix}extension=${libFileName}.so" >"/tmp/${libFileName}.ini"
+  mv "/tmp/${libFileName}.ini" "${realModDir}/${libFileName}.ini"
   if [ ! -d "$modDir" ]; then
     return
   fi
 
-  ${SUDO_CMD} rm -rf "/etc/php/$PHP_VERSION/fpm/conf.d/${priority}-${libFileName}.ini" "/etc/php/$PHP_VERSION/cli/conf.d/${priority}-${libFileName}.ini"
+  rm -rf "/etc/php/$PHP_VERSION/fpm/conf.d/${priority}-${libFileName}.ini" "/etc/php/$PHP_VERSION/cli/conf.d/${priority}-${libFileName}.ini"
   links="$(find "/etc/php/$PHP_VERSION/cli/" -lname "/etc/php/$PHP_VERSION/mods-available/${libFileName}.ini")"
   if [ 'x' = "${links}x" ]; then
-    ${SUDO_CMD} ln -s "/etc/php/$PHP_VERSION/mods-available/${libFileName}.ini" "/etc/php/$PHP_VERSION/fpm/conf.d/${priority}-${libFileName}.ini"
-    ${SUDO_CMD} ln -s "/etc/php/$PHP_VERSION/mods-available/${libFileName}.ini" "/etc/php/$PHP_VERSION/cli/conf.d/${priority}-${libFileName}.ini"
+    ln -s "/etc/php/$PHP_VERSION/mods-available/${libFileName}.ini" "/etc/php/$PHP_VERSION/fpm/conf.d/${priority}-${libFileName}.ini"
+    ln -s "/etc/php/$PHP_VERSION/mods-available/${libFileName}.ini" "/etc/php/$PHP_VERSION/cli/conf.d/${priority}-${libFileName}.ini"
   fi
 }
 

@@ -1,5 +1,6 @@
 ARG PHP_VERSION
-FROM php:${PHP_VERSION-8.3}-bookworm
+ARG DEBIAN_CODENAME
+FROM php:${PHP_VERSION:-8.3}-${DEBIAN_CODENAME:-bookworm}
 ENV PHP_VERSION=${PHP_VERSION:-8.3}
 
 LABEL maintainer="eggplants <w10776e8w@yahoo.co.jp>"

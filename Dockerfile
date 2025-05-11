@@ -32,7 +32,7 @@ PACKAGES=(
   libevent-dev libldap2-dev libpcre3-dev libssl-dev libtool libtool-bin libxml2-dev libyaml-dev libzip-dev
   # Asterisk: for addons:
   libspeex-dev libspeexdsp-dev libogg-dev libvorbis-dev libasound2-dev portaudio19-dev libcurl4-openssl-dev
-  xmlstarlet libpq-dev unixodbc-dev libneon27-dev libgmime-3.0-dev liblua5.2-dev liburiparser-dev libxslt1-dev
+  xmlstarlet libpq-dev unixodbc-dev libneon27-dev libgmime-3.0-dev liburiparser-dev libxslt1-dev
   libbluetooth-dev libradcli-dev freetds-dev libosptk-dev libjack-jackd2-dev
   libsnmp-dev libiksemel-dev libcorosync-common-dev libcpg-dev libcfg-dev libnewt-dev libpopt-dev
   libical-dev libspandsp-dev libresample1-dev libc-client2007e-dev binutils-dev libsrtp2-dev libsrtp2-dev
@@ -40,20 +40,11 @@ PACKAGES=(
   # Asterisk: for the unpackaged below:
   wget subversion p7zip-full open-vm-tools sysstat dahdi-linux sox
   python3-dev vlan git ntp sqlite3 curl w3m lame libbz2-dev libgmp-dev
-  fail2ban sngrep tcpdump msmtp beanstalkd lua5.1-dev liblua5.1-0 libtonezone-dev
+  fail2ban sngrep tcpdump msmtp beanstalkd libluajit-5.1-dev libtonezone-dev
 )
 
 apt-get update
 apt-get -y install "${DEBIAN_PACKAGES[@]}"
-
-# pdnsd
-# PDNSD_URL="https://cloudfront.debian.net/debian-archive/debian/pool/main/p/pdnsd/pdnsd_1.2.9a-par-2_$(dpkg --print-architecture).deb"
-# curl -OL "$PDNSD_URL"
-# apt-get install -y ./"$(basename "$PDNSD_URL")"
-# rm "$_"
-
-apt-get clean
-rm -rf /var/lib/apt/lists/*
 
 rm -rf /bin/ps
 ln -s /bin/busybox /bin/ps
@@ -106,6 +97,21 @@ COPY ./packages/ ./packages/
 COPY ./install.sh .
 
 RUN ./install.sh
+
+RUN <<EOF
+export DEBIAN_FRONTEND=noninteractive
+
+# TODO: check installation after finished install.sh
+# pdnsd
+# PDNSD_URL="https://cloudfront.debian.net/debian-archive/debian/pool/main/p/pdnsd/pdnsd_1.2.9a-par-2_$(dpkg --print-architecture).deb"
+# curl -OL "$PDNSD_URL"
+# apt-get install -y ./"$(basename "$PDNSD_URL")"
+# rm "$_"
+
+apt-get clean
+rm -rf /var/lib/apt/lists/*
+unset DEBIAN_FRONTEND
+EOF
 
 ENTRYPOINT ["/bin/sh", "/sbin/docker-entrypoint"]
 

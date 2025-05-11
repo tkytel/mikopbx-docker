@@ -44,7 +44,7 @@ PACKAGES=(
 )
 
 apt-get update
-apt-get -y install "${DEBIAN_PACKAGES[@]}"
+apt-get -y install "${PACKAGES[@]}"
 
 rm -rf /bin/ps
 ln -s /bin/busybox /bin/ps

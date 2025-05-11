@@ -95,9 +95,20 @@ ENV PATH="$PATH:/sbin:/usr/sbin"
 
 COPY ./libs/ ./libs/
 COPY ./packages/ ./packages/
-COPY ./install.sh .
 
-RUN ./install.sh
+RUN <<EOF
+source ./libs/functions.sh
+
+for filename in ./packages/*.sh; do
+  cat <<BANNER
+###############################################
+### Starting ${filename}
+###############################################
+BANNER
+  # shellcheck disable=SC1090
+  source "$filename"
+done
+EOF
 
 RUN <<EOF
 export DEBIAN_FRONTEND=noninteractive

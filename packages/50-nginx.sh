@@ -26,9 +26,8 @@ if [ -d "$PATCH_PATH" ]; then
     )
   done
 fi
-export LUAJIT_LIB=/usr/local/lib/
-export LUAJIT_INC=/usr/local/include/luajit2-2.1/
-ls /usr/local/include/luajit*
+export LUAJIT_LIB=/usr/
+export LUAJIT_INC=/usr/include/luajit-2.1/
 ./configure --prefix=/usr --user=nginx --group=nginx --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/error.log \
   --http-log-path=/var/log/access.log \
   --pid-path=/var/run/nginx.pid \

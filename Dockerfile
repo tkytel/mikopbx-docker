@@ -23,25 +23,28 @@ SHELL ["/bin/bash", "-euox", "pipefail", "-c"]
 RUN <<EOF
 export DEBIAN_FRONTEND=noninteractive
 
+PACKAGES=(
+  # Basic build system:
+  autoconf build-essential busybox ca-cetificates curl dialog dropbear pkg-config
+  # Asterisk: basic requirements:
+  libedit-dev libjansson-dev libsqlite3-dev uuid-dev dahdi-linux linux-source
+  # PHP extension requirements:
+  libevent-dev libldap2-dev libpcre3-dev libssl-dev libtool libtool-bin libxml2-dev libyaml-dev libzip-dev
+  # Asterisk: for addons:
+  libspeex-dev libspeexdsp-dev libogg-dev libvorbis-dev libasound2-dev portaudio19-dev libcurl4-openssl-dev
+  xmlstarlet libpq-dev unixodbc-dev libneon27-dev libgmime-3.0-dev liblua5.2-dev liburiparser-dev libxslt1-dev
+  libbluetooth-dev libradcli-dev freetds-dev libosptk-dev libjack-jackd2-dev
+  libsnmp-dev libiksemel-dev libcorosync-common-dev libcpg-dev libcfg-dev libnewt-dev libpopt-dev
+  libical-dev libspandsp-dev libresample1-dev libc-client2007e-dev binutils-dev libsrtp2-dev libsrtp2-dev
+  libgsm1-dev doxygen graphviz libcodec2-dev libfftw3-dev libsndfile1-dev libunbound-dev
+  # Asterisk: for the unpackaged below:
+  wget subversion p7zip-full open-vm-tools sysstat dahdi-linux sox
+  python3-dev vlan git ntp sqlite3 curl w3m lame libbz2-dev libgmp-dev
+  fail2ban sngrep tcpdump msmtp beanstalkd lua5.1-dev liblua5.1-0 libtonezone-dev
+)
+
 apt-get update
-apt-get -y install \
-  autoconf \
-  build-essential \
-  busybox \
-  ca-certificates \
-  curl \
-  dahdi-linux \
-  linux-source \
-  libevent-dev \
-  libldap2-dev \
-  libpcre3-dev \
-  libssl-dev \
-  libtool \
-  libtool-bin \
-  libxml2-dev \
-  libyaml-dev \
-  libzip-dev \
-  pkg-config
+apt-get -y install "${DEBIAN_PACKAGES[@]}"
 
 # pdnsd
 # PDNSD_URL="https://cloudfront.debian.net/debian-archive/debian/pool/main/p/pdnsd/pdnsd_1.2.9a-par-2_$(dpkg --print-architecture).deb"

@@ -44,25 +44,45 @@ ln -s /var/lib/asterisk/moh/ /offload/asterisk/moh
 mkdir -p /var/asterisk/run
 chown -R asterisk:asterisk /var/asterisk/run
 
-ln -s /usr/www/config /etc/inc
-ln -s /usr/www/src/Core/Rc /etc/rc
-chmod +x -R /etc/rc
+ln -s "$wwwDir/config" /etc/inc
+if [[ -e "$wwwDir/src/Core/Rc" ]]; then
+  ln -s "$wwwDir/src/Core/Rc" /etc/rc
+  chmod +x -R /etc/rc
+  chmod +x /etc/rc/debian/*
+  ln -s /etc/rc/debian/mikopbx.sh /etc/init.d/mikopbx
+  ln -s /etc/rc/debian/mikopbx_iptables /etc/init.d/mikopbx-iptables
+fi
+if [[ -e "$wwwDir/src/Core/System/RootFS/etc/rc/" ]]; then
+  ln -s "$wwwDir/src/Core/System/RootFS/etc/rc" /etc/rc
+  chmod +x -R /etc/rc
+  chmod +x /etc/rc/debian/*
+  ln -s /etc/rc/debian/mikopbx.sh /etc/init.d/mikopbx
+  ln -s /etc/rc/debian/mikopbx_iptables /etc/init.d/mikopbx-iptables
+fi
+if ! [[ -e /etc/rc ]]; then
+  echo 'rc directory is missing.' >&1
+  exit 1
+fi
+
 chown -R www:www /offload
 
 mkdir -p /storage/usbdisk1 /storage/usbdisk1/mikopbx/media/moh /offload/asterisk/firmware/iax
-cp /usr/www/resources/sounds/moh/* /storage/usbdisk1/mikopbx/media/moh/
-
-chmod +x /etc/rc/debian/*
-ln -s /etc/rc/debian/mikopbx.sh /etc/init.d/mikopbx
+cp "$wwwDir/resources/sounds/moh/"* /storage/usbdisk1/mikopbx/media/moh/
 
 extensionDir="$(php -i | grep '^extension_dir' | cut -d ' ' -f 3)"
-ln -s /usr/www/resources/rootfs/usr/lib64/extensions/no-debug-zts-20190902/mikopbx.so "$extensionDir/mikopbx.so"
-ln -s /usr/www/resources/sounds /offload/asterisk/sounds
-chmod +x /usr/www/resources/rootfs/sbin/*
-ln -s /usr/www/resources/rootfs/sbin/wav2mp3.sh /sbin/wav2mp3.sh
-ln -s /usr/www/resources/rootfs/sbin/crash_asterisk /sbin/crash_asterisk
+ln -s "$wwwDir/resources/rootfs/usr/lib64/extensions/no-debug-zts-20190902/mikopbx.so" "$extensionDir/mikopbx.so"
+ln -s "$wwwDir/resources/sounds" /offload/asterisk/sounds
 
-ln -s /etc/rc/debian/mikopbx_iptables /etc/init.d/mikopbx-iptables
+if [[ -e "$wwwDir/resources/rootfs/sbin/" ]]; then
+  chmod +x "$wwwDir/resources/rootfs/sbin/"*
+  ln -s "$wwwDir/resources/rootfs/sbin/wav2mp3.sh" /sbin/wav2mp3.sh
+  ln -s "$wwwDir/resources/rootfs/sbin/crash_asterisk" /sbin/crash_asterisk
+fi
+if [[ -e "$wwwDir/src/Core/System/RootFS/sbin/" ]]; then
+  chmod +x "$wwwDir/src/Core/System/RootFS/sbin/"*
+  ln -s "$wwwDir/src/Core/System/RootFS/sbin/wav2mp3.sh" /sbin/wav2mp3.sh
+  ln -s "$wwwDir/src/Core/System/RootFS/sbin/crash_asterisk" /sbin/crash_asterisk
+fi
 
 if command -v systemctl &>/dev/null; then
   ln -s /etc/rc/debian/mikopbx_lan_dhcp /etc/dhcp/dhclient-enter-hooks.d/mikopbx_lan_dhcp

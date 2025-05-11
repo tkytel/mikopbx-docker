@@ -29,8 +29,8 @@ apt-get -y install \
   build-essential \
   busybox \
   ca-certificates \
-  linux-headers-generic \
-  linux-image-generic \
+  linux-headers-$(uname -r) \
+  linux-image-$(uname -r) \
   linux-source \
   libevent-dev \
   libldap2-dev \

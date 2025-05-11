@@ -1,48 +1,23 @@
-# debian-install-scripts
+# mikopbx-docker
 
-## Быстрый старт
-### Создать bridge подсеть
-`docker network create mikopbx-bridge`
-### Запустить контейнер
-`
-docker run --cap-add=NET_ADMIN \
-            --network mikopbx-bridge \
-            --name mikopbx \
-            -v /var/spool/mikopbx/cf:/cf \
-            -v /var/spool/mikopbx/storage:/storage \
-            --publish 8080:80 \
-            --publish 5060:5060 \
-            -p 10000-10400:10000-10400 \
-            -it -d --rm mikopbx:13
-`
+## How to build
 
-### Отправляем на github
-`echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin`
-`cat /root/2021.4.2-mikopbx-generic-x86-64-linux.tar | docker import --change 'ENTRYPOINT ["sh", "/sbin/docker-entrypoint"]' --change 'LABEL org.opencontainers.image.source https://github.com/mikopbx/Core' - ghcr.io/boffart/mikopbx:2021.4.2.dev.x86-64`
-`docker push ghcr.io/boffart/mikopbx:2021.4.2.dev.x86-64`
+```bash
+# https://packagist.org/packages/mikopbx/core#dev-develop
+docker build . \
+  --build-arg PHP_VERSION=8.3 \
+  --build-arg PHALCON_VERSION=5.8.0 \
+  --build-arg MIKO_PBX_VERSION=dev-develop \  
+  -t eggplants/mikopbx-docker:dev-develop-2025-05-07-9ffdc3b25405788d5793bc767b1a5f2026bc2429
 
-### Подключиться к запущенному контейнеру
-`docker exec -it mikopbx sh`
+# https://packagist.org/packages/mikopbx/core#2024.1.114
+docker build . \
+  --build-arg PHP_VERSION=7.4 \
+  --build-arg PHALCON_VERSION=4.1.3 \
+  --build-arg MIKO_PBX_VERSION=2024.1.114 \  
+  -t eggplants/mikopbx-docker:2024.1.114
+```
 
-## Полезные команды Docker
+## How to use image
 
-#### Запуск контейнера и назначение имени "mikopbx"
-`docker run --cap-add=NET_ADMIN --net=host --name mikopbx -v /var/spool/mikopbx/cf:/cf -v /var/spool/mikopbx/storage:/storage -it -d --rm mikopbx:13`
-`docker run --cap-add=NET_ADMIN --net=host --name mikopbx -v /var/spool/mikopbx/cf:/cf -v /var/spool/mikopbx/storage:/storage -it -d --rm ghcr.io/mikopbx/mikopbx-x86-64:2021.3.53-dev`
-`docker run --cap-add=NET_ADMIN --net=host --name mikopbx -v /var/spool/mikopbx/cf:/cf -v /var/spool/mikopbx/storage:/storage --device /dev/dahdi/transcode --device /dev/dahdi/channel --device /dev/dahdi/ctl --device /dev/dahdi/pseudo --device /dev/dahdi/timer -it -d --rm mikopbx:11`
-#### Список запущенных контейнеров
-`docker ps`
-#### Завершить процесс
-`docker kill mikopbx`
-#### Все запущенные контейнеры
-`docker ps -qa`
-#### Удалить все контейнеры
-`docker stop $(docker ps -qa)`
-
-`docker rm $(docker ps -qa)`
-
-#### Импорт контейнера.
-docker import --change 'ENTRYPOINT ["sh", "/sbin/docker-entrypoint"]' /tmp/2021.3.1-mikopbx-generic-x86-64-linux.tar mikopbx:13
-
-#### Удалить все процессы. 
-ps | grep -v 'docker-entrypoint' | grep -v '/bin/tail -f /dev/null' | grep -v 'PID' | cut -d ' ' -f 1 | xargs kill
+See: <https://docs.mikopbx.com/mikopbx/english/setup/docker>

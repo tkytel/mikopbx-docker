@@ -3,6 +3,9 @@
 ## How to build
 
 ```bash
+# default
+docker build . -t eggplants/mikopbx-docker:latest
+
 # https://packagist.org/packages/mikopbx/core#dev-develop
 docker build . \
   --build-arg PHP_VERSION=8.3 \

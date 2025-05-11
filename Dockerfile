@@ -96,6 +96,8 @@ ENV PATH="$PATH:/sbin:/usr/sbin"
 COPY ./libs/ ./libs/
 COPY ./packages/ ./packages/
 
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
 RUN <<EOF
 source ./libs/functions.sh
 

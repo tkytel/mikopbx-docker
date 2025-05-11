@@ -46,7 +46,7 @@ apt-get -y install \
 # pdnsd
 PDNSD_URL="https://cloudfront.debian.net/debian-archive/debian/pool/main/p/pdnsd/pdnsd_1.2.9a-par-2_$(dpkg --print-architecture).deb"
 curl -OL "$PDNSD_URL"
-apt-get install -y "$(basename "$PDNSD_URL")"
+apt-get install -y ./"$(basename "$PDNSD_URL")"
 rm "$_"
 
 apt-get clean

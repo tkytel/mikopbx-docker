@@ -29,7 +29,7 @@ PACKAGES=(
   # Asterisk: basic requirements:
   libedit-dev libjansson-dev libsqlite3-dev uuid-dev dahdi-linux linux-source
   # PHP extension requirements:
-  libevent-dev libldap2-dev libpcre3-dev libssl-dev libtool libtool-bin libxml2-dev libyaml-dev libzip-dev
+  libevent-dev libldap2-dev libpcre3-dev libssl-dev libtool libtool-bin libxml2-dev libyaml-dev libzip-dev libonig-dev
   # Asterisk: for addons:
   libspeex-dev libspeexdsp-dev libogg-dev libvorbis-dev libasound2-dev portaudio19-dev libcurl4-openssl-dev
   xmlstarlet libpq-dev unixodbc-dev libneon27-dev libgmime-3.0-dev liburiparser-dev libxslt1-dev

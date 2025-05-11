@@ -28,12 +28,12 @@ EOF
 
 PACKAGES_DEBIAN=(
   # Basic build system:
-  curl dialog dropbear build-essential pkg-config
+  curl dialog dropbear
   # Asterisk: basic requirements:
-  libedit-dev libjansson-dev libsqlite3-dev uuid-dev libxml2-dev
+  libedit-dev libjansson-dev libsqlite3-dev uuid-dev
   # Asterisk: for addons:
   libspeex-dev libspeexdsp-dev libogg-dev libvorbis-dev libasound2-dev portaudio19-dev libcurl4-openssl-dev xmlstarlet bison flex
-  libpq-dev unixodbc-dev libneon27-dev libgmime-3.0-dev liblua5.2-dev liburiparser-dev libxslt1-dev libssl-dev
+  libpq-dev unixodbc-dev libneon27-dev libgmime-3.0-dev liblua5.2-dev liburiparser-dev libxslt1-dev
   libbluetooth-dev libradcli-dev freetds-dev libosptk-dev libjack-jackd2-dev bash
   libsnmp-dev libiksemel-dev libcorosync-common-dev libcpg-dev libcfg-dev libnewt-dev libpopt-dev libical-dev libspandsp-dev
   libresample1-dev libc-client2007e-dev binutils-dev libsrtp2-dev libsrtp2-dev libgsm1-dev doxygen graphviz zlib1g-dev libldap2-dev
@@ -41,7 +41,7 @@ PACKAGES_DEBIAN=(
   # Asterisk: for the unpackaged below:
   wget subversion p7zip-full open-vm-tools sysstat dahdi-linux sox
   bzip2 patch python3-dev vlan git ntp sqlite3 curl w3m re2c lame libbz2-dev libgmp-dev libzip-dev
-  fail2ban sngrep tcpdump msmtp beanstalkd lua5.1-dev liblua5.1-0 libtonezone-dev libevent-dev libyaml-dev
+  fail2ban sngrep tcpdump msmtp beanstalkd lua5.1-dev liblua5.1-0 libtonezone-dev
 )
 
 # The distributions we do support:

@@ -26,17 +26,20 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get -y install \
   autoconf \
+  build-essential \
   busybox \
   ca-certificates \
-  gcc \
   linux-image-generic \
+  libevent-dev \
   libldap2-dev \
   libpcre3-dev \
+  libssl-dev \
   libtool \
   libtool-bin \
   libxml2-dev \
+  libyaml-dev \
   libzip-dev \
-  make
+  pkg-config
 apt-get clean
 rm -rf /var/lib/apt/lists/*
 
@@ -51,11 +54,14 @@ unset DEBIAN_FRONTEND
 EOF
 
 RUN <<EOF
+php -i | grep enabled
+
 mv /usr/local/etc/php/php.ini-production /etc/php.ini
+pecl config-set php_ini /etc/php.ini
 
 ln -s /usr/lib/x86_64-linux-gnu/libldap.so /usr/lib/libldap.so
 docker-php-ext-configure pcntl --enable-pcntl
-docker-php-ext-install -j$(nproc) \
+docker-php-ext-install -j"$(nproc)" \
   ldap \
   pcntl \
   sockets \
@@ -63,12 +69,18 @@ docker-php-ext-install -j$(nproc) \
 if [[ "$PHP_VERSION" =~ ^8\. ]]; then
   :
 else
-  docker-php-ext-install -j$(nproc) json
+  docker-php-ext-install -j"$(nproc)" json
 fi
 
-pecl install -s psr mailparse
-pecl install -s phalcon-${PHALCON_VERSION} &> /dev/null
-docker-php-ext-enable psr phalcon mailparse
+pecl install event
+docker-php-ext-enable --ini-name zz-event.ini event
+
+EXTS=(psr mailparse igbinary msgpack xdebug yaml zephir_parser redis)
+pecl install -s "${EXTS[@]}"
+docker-php-ext-enable "${EXTS[@]}"
+
+pecl install -s "phalcon-${PHALCON_VERSION}" &> /dev/null
+docker-php-ext-enable phalcon
 pecl clear-cache
 EOF
 

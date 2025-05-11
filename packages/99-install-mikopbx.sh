@@ -8,7 +8,7 @@ fi
 honeDir='/home/www'
 wwwDir='/usr/www'
 
-useradd www 2>/dev/null
+id -u www &>/dev/null || useradd www
 
 mkdir -p "$honeDir" && chown www:www "$honeDir"
 mkdir -p "$wwwDir" && chown www:www "$wwwDir"

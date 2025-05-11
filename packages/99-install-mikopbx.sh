@@ -84,12 +84,4 @@ if [[ -e "$wwwDir/src/Core/System/RootFS/sbin/" ]]; then
   ln -s "$wwwDir/src/Core/System/RootFS/sbin/crash_asterisk" /sbin/crash_asterisk
 fi
 
-if command -v systemctl &>/dev/null; then
-  ln -s /etc/rc/debian/mikopbx_lan_dhcp /etc/dhcp/dhclient-enter-hooks.d/mikopbx_lan_dhcp
-  update-rc.d mikopbx defaults
-  systemctl restart mikopbx
-  update-rc.d mikopbx-iptables defaults
-  systemctl disable rsyslog
-fi
-
 popd

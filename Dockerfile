@@ -29,6 +29,7 @@ apt-get -y install \
   build-essential \
   busybox \
   ca-certificates \
+  curl \
   dahdi-linux \
   linux-source \
   libevent-dev \
@@ -41,6 +42,13 @@ apt-get -y install \
   libyaml-dev \
   libzip-dev \
   pkg-config
+
+# pdnsd
+PDNSD_URL="https://cloudfront.debian.net/debian-archive/debian/pool/main/p/pdnsd/pdnsd_1.2.9a-par-2_$(dpkg --print-architecture).deb"
+curl -OL "$PDNSD_URL"
+apt-get install -y "$(basename "$PDNSD_URL")"
+rm "$_"
+
 apt-get clean
 rm -rf /var/lib/apt/lists/*
 

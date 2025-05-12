@@ -45,20 +45,18 @@ mkdir -p /var/asterisk/run
 chown -R asterisk:asterisk /var/asterisk/run
 
 ln -s "$wwwDir/config" /etc/inc
-if [[ -e "$wwwDir/src/Core/Rc" ]]; then
-  ln -s "$wwwDir/src/Core/Rc" /etc/rc
+
+for rc_path in "$wwwDir/src/Core/Rc" "$wwwDir/src/Core/System/RootFS/etc/rc"; do
+  if ! [[ -e $rc_path ]]; then
+    continue
+  fi
+  ln -s "$rc_path" /etc/rc
   chmod +x -R /etc/rc
   chmod +x /etc/rc/debian/*
   ln -s /etc/rc/debian/mikopbx.sh /etc/init.d/mikopbx
   ln -s /etc/rc/debian/mikopbx_iptables /etc/init.d/mikopbx-iptables
-fi
-if [[ -e "$wwwDir/src/Core/System/RootFS/etc/rc/" ]]; then
-  ln -s "$wwwDir/src/Core/System/RootFS/etc/rc" /etc/rc
-  chmod +x -R /etc/rc
-  chmod +x /etc/rc/debian/*
-  ln -s /etc/rc/debian/mikopbx.sh /etc/init.d/mikopbx
-  ln -s /etc/rc/debian/mikopbx_iptables /etc/init.d/mikopbx-iptables
-fi
+  break
+done
 if ! [[ -e /etc/rc ]]; then
   echo 'rc directory is missing.' >&1
   exit 1
@@ -73,15 +71,15 @@ extensionDir="$(php -i | grep '^extension_dir' | cut -d ' ' -f 3)"
 ln -s "$wwwDir/resources/rootfs/usr/lib64/extensions/no-debug-zts-20190902/mikopbx.so" "$extensionDir/mikopbx.so"
 ln -s "$wwwDir/resources/sounds" /offload/asterisk/sounds
 
-if [[ -e "$wwwDir/resources/rootfs/sbin/" ]]; then
-  chmod +x "$wwwDir/resources/rootfs/sbin/"*
-  ln -s "$wwwDir/resources/rootfs/sbin/wav2mp3.sh" /sbin/wav2mp3.sh
-  ln -s "$wwwDir/resources/rootfs/sbin/crash_asterisk" /sbin/crash_asterisk
-fi
-if [[ -e "$wwwDir/src/Core/System/RootFS/sbin/" ]]; then
-  chmod +x "$wwwDir/src/Core/System/RootFS/sbin/"*
-  ln -s "$wwwDir/src/Core/System/RootFS/sbin/wav2mp3.sh" /sbin/wav2mp3.sh
-  ln -s "$wwwDir/src/Core/System/RootFS/sbin/crash_asterisk" /sbin/crash_asterisk
-fi
+for sbin_path in "$wwwDir/resources/rootfs/sbin" "$wwwDir/src/Core/System/RootFS/sbin"; do
+  if ! [[ -e $sbin_path ]]; then
+    continue
+  fi
+  chmod +x "$sbin_path/"*
+  ln -s "$sbin_path/wav2mp3.sh" /sbin/wav2mp3.sh
+  ln -s "$sbin_path/crash_asterisk" /sbin/crash_asterisk
+  ln -s "$sbin_path/docker-entrypoint" /sbin/docker-entrypoint
+  break
+done
 
 popd

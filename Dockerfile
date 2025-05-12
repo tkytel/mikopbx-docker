@@ -32,9 +32,9 @@ ESSENTIAL_PACKAGES=(
   # Basic build system:
   autoconf build-essential busybox ca-certificates curl dialog dropbear pkg-config
   # Asterisk: basic requirements:
-  libedit-dev libjansson-dev libsqlite3-dev uuid-dev dahdi-linux linux-source redis
+  libedit-dev libjansson-dev libsqlite3-dev uuid-dev dahdi-linux linux-source
   # PHP extension requirements:
-  libevent-dev libldap2-dev libpcre3-dev libssl-dev libtool libtool-bin libxml2-dev libyaml-dev libzip-dev libonig-dev libldb-dev libldap-dev
+  libevent-dev libldap2-dev libpcre3-dev libssl-dev libtool libtool-bin libxml2-dev libyaml-dev libzip-dev libonig-dev libldb-dev libldap-dev redis
   # Asterisk: for addons:
   libspeex-dev libspeexdsp-dev libogg-dev libvorbis-dev libasound2-dev portaudio19-dev libcurl4-openssl-dev
   xmlstarlet libpq-dev unixodbc-dev libneon27-dev libgmime-3.0-dev liburiparser-dev libxslt1-dev
@@ -59,7 +59,7 @@ apt-get update
 apt-get -y install "${ESSENTIAL_PACKAGES[@]}"
 
 # Install optional packages with ignoring error
-for pkg in "${packages[@]}"; do
+for pkg in "${OPTIONAL_PACKAGES[@]}"; do
   apt-get install -y "$pkg" || true
 done
 

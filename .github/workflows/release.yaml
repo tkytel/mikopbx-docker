@@ -86,75 +86,18 @@ jobs:
           path: /tmp/digests/*
           retention-days: 1
 
-  buildx-arm:
+  buildx:
     strategy:
       fail-fast: false
       matrix:
         include:
           - platform: linux/arm/v7
+            runner: ubuntu-24.04-arm
           - platform: linux/arm/v6
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - name: Set platform pair name
-        run: |
-          platform=${{ matrix.platform }}
-          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
-
-      - uses: actions/checkout@v4
-
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY_IMAGE }}
-          tags: ${{ github.event.inputs.miko_pbx_version }}
-
-      - # Add support for more platforms with QEMU (optional)
-        # https://github.com/docker/setup-qemu-action
-        name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push by digest
-        id: build
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: ${{ matrix.platform }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            PHP_VERSION=${{ github.event.inputs.php_version }}
-            DEBIAN_CODENAME=${{ github.event.inputs.debian_codename }}
-            PHALCON_VERSION=${{ github.event.inputs.phalcon_version }}
-            MIKO_PBX_VERSION=${{ github.event.inputs.miko_pbx_version }}
-          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-
-      - name: Export digest
-        run: |
-          mkdir -p /tmp/digests
-          echo "${{ steps.build.outputs.digest }}" > "/tmp/digests/${{ env.PLATFORM_PAIR }}.digest"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: digests-${{ env.PLATFORM_PAIR }}
-          path: /tmp/digests/*
-          retention-days: 1
-
-  buildx-x86:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
+            runner: ubuntu-24.04-arm
           - platform: linux/386
-    runs-on: ubuntu-latest
+            runner: ubuntu-latest
+    runs-on: {{ matrix.runner }}
     steps:
       - name: Set platform pair name
         run: |
@@ -211,7 +154,7 @@ jobs:
 
   merge:
     runs-on: ubuntu-latest
-    needs: [build, buildx-arm, buildx-x86]
+    needs: [build, buildx]
     steps:
       - uses: actions/download-artifact@v4
         with:

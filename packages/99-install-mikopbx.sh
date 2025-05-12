@@ -76,9 +76,7 @@ for sbin_path in "$wwwDir/resources/rootfs/sbin" "$wwwDir/src/Core/System/RootFS
     continue
   fi
   chmod +x "$sbin_path/"*
-  ln -s "$sbin_path/wav2mp3.sh" /sbin/wav2mp3.sh
-  ln -s "$sbin_path/crash_asterisk" /sbin/crash_asterisk
-  ln -s "$sbin_path/docker-entrypoint" /sbin/docker-entrypoint
+  ln -sf "$sbin_path/"* /sbin/
   break
 done
 

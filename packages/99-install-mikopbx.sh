@@ -15,15 +15,11 @@ mkdir -p "$wwwDir" && chown www:www "$wwwDir"
 
 pushd "$wwwDir"
 
-su www -c "composer require mikopbx/core:${MIKO_PBX_VERSION}"
+# su www -c "composer require mikopbx/core:${MIKO_PBX_VERSION}"
 echo "${MIKO_PBX_VERSION}" >/etc/version
 busybox touch /etc/version.buildtime
 mv "$wwwDir/vendor/mikopbx/core/"* "$wwwDir/"
 su www -c 'composer update'
-
-echo "Installing gnatsd ..."
-chmod +x "$wwwDir/resources/rootfs/usr/sbin/gnatsd"
-ln -s "$wwwDir/resources/rootfs/usr/sbin/gnatsd" /usr/sbin/gnatsd
 
 rm -rf /etc/php.ini /etc/php.d/ /etc/nginx/ /etc/php-fpm.conf /etc/php-www.conf
 ln -s "$wwwDir/resources/rootfs/etc/nginx" /etc/nginx

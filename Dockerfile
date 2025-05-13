@@ -1,6 +1,12 @@
+FROM golang:bookworm AS gnatsd-builder
+
+WORKDIR /work
+RUN go install github.com/nats-io/gnatsd@latest
+RUN mv `which gnatsd` ./
+
 ARG PHP_VERSION
 ARG DEBIAN_CODENAME
-FROM php:${PHP_VERSION:-8.3}-${DEBIAN_CODENAME:-bookworm}
+FROM php:${PHP_VERSION:-8.3}-${DEBIAN_CODENAME:-bookworm} AS builder
 ENV PHP_VERSION=${PHP_VERSION:-8.3}
 
 LABEL maintainer="eggplants <w10776e8w@yahoo.co.jp>"
@@ -23,6 +29,8 @@ ARG TARGETPLATFORM
 ENV TARGETPLATFORM=${TARGETPLATFORM}
 
 SHELL ["/bin/bash", "-euox", "pipefail", "-c"]
+
+COPY --from=gnatsd-builder /work/gnatsd /usr/sbin/gnatsd
 
 RUN <<EOF
 export DEBIAN_FRONTEND=noninteractive

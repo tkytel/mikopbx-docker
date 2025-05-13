@@ -16,6 +16,7 @@ services:
     # image: mikopbx/mikopbx
     # image: ghcr.io/mikopbx/mikopbx-x86-64
     image: ghcr.io/tkytel/mikopbx-docker:dev-develop
+    build: .
     network_mode: "host"
     cap_add:
       - NET_ADMIN

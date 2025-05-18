@@ -144,6 +144,8 @@ BANNER
 done
 EOF
 
+ENV PHP_INI_SCAN_DIR=/etc/php.d
+
 RUN <<EOF
 export DEBIAN_FRONTEND=noninteractive
 

@@ -23,26 +23,49 @@ busybox touch /etc/version.buildtime
 mv "$wwwDir/vendor/mikopbx/core/"* "$wwwDir/"
 su www -c 'composer update'
 
+mkdir -p /offload/rootfs/usr/www/
+ln -s "$wwwDir/src/" /offload/rootfs/usr/www/src
+
 rm -rf /etc/php.ini /etc/php.d/ /etc/nginx/ /etc/php-fpm.conf /etc/php-www.conf
-ln -s "$wwwDir/resources/rootfs/etc/nginx" /etc/nginx
-ln -s "$wwwDir/resources/rootfs/etc/php.d" /etc/php.d
-ln -s "$wwwDir/resources/rootfs/etc/php.ini" /etc/php.ini
-ln -s "$wwwDir/resources/rootfs/etc/php-fpm.conf" /etc/php-fpm.conf
-ln -s "$wwwDir/resources/rootfs/etc/php-www.conf" /etc/php-www.conf
+for etc_path in "$wwwDir/resources/rootfs/etc" "$wwwDir/src/Core/System/RootFS/etc"; do
+  if ! [[ -e $etc_path ]]; then
+    continue
+  fi
+  ln -s "$etc_path/nginx" /etc/nginx
+  ln -s "$etc_path/php.d" /etc/php.d
+  ln -s "$etc_path/php.ini" /etc/php.ini
+  ln -s "$etc_path/php-fpm.conf" /etc/php-fpm.conf
+  ln -s "$etc_path/php-www.conf" /etc/php-www.conf
+  break
+done
+if ! ls /etc/{nginx,php.d,php.ini,php-fpm.conf,php-www.conf} 1>/dev/null; then
+  echo 'etc files are missing.' >&1
+  exit 1
+fi
+
+for config_path in "$wwwDir/config" "$wwwDir/src/Core/System/RootFS/etc/inc"; do
+  if ! [[ -e $config_path ]]; then
+    continue
+  fi
+  ln -s "$config_path" /etc/inc
+  break
+done
+if ! [[ -e $config_path ]]; then
+  echo 'inc dir is missing.' >&1
+  exit 1
+fi
 
 mkdir -p /cf/conf/
 chown -R www:www /cf
 cp "$wwwDir/resources/db/mikopbx.db" /cf/conf/mikopbx.db
 
 chown -R asterisk:asterisk /etc/asterisk
-mkdir -p /offload/rootfs/usr/www/ /offload/asterisk/
+mkdir -p /offload/asterisk/
 ln -s /usr/lib/asterisk/modules/ /offload/asterisk/modules
 ln -s /var/lib/asterisk/documentation/ /offload/asterisk/documentation
 ln -s /var/lib/asterisk/moh/ /offload/asterisk/moh
 mkdir -p /var/asterisk/run
 chown -R asterisk:asterisk /var/asterisk/run
-
-ln -s "$wwwDir/config" /etc/inc
 
 for rc_path in "$wwwDir/src/Core/Rc" "$wwwDir/src/Core/System/RootFS/etc/rc"; do
   if ! [[ -e $rc_path ]]; then

@@ -2,7 +2,7 @@ FROM golang:bookworm AS gnatsd-builder
 
 WORKDIR /work
 RUN go install github.com/nats-io/gnatsd@latest
-RUN mv `which gnatsd` ./
+RUN mv "$(which gnatsd)" ./
 
 ARG PHP_VERSION
 ARG DEBIAN_CODENAME

@@ -39,15 +39,16 @@ jobs:
           - platform: linux/arm64
             runner: ubuntu-24.04-arm
             matrix.qemu: false
-          - platform: linux/arm/v7
-            runner: ubuntu-24.04-arm
-            matrix.qemu: true
-          - platform: linux/arm/v6
-            runner: ubuntu-24.04-arm
-            matrix.qemu: true
-          - platform: linux/386
-            runner: ubuntu-latest
-            matrix.qemu: true
+          # FIXME: https://github.com/mikopbx/Core/issues/889
+          # - platform: linux/arm/v7
+          #   runner: ubuntu-24.04-arm
+          #   matrix.qemu: true
+          # - platform: linux/arm/v6
+          #   runner: ubuntu-24.04-arm
+          #   matrix.qemu: true
+          # - platform: linux/386
+          #   runner: ubuntu-latest
+          #   matrix.qemu: true
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Set platform pair name

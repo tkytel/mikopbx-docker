@@ -87,10 +87,17 @@ chown -R www:www /offload
 
 mkdir -p /storage/usbdisk1 /storage/usbdisk1/mikopbx/media/moh /offload/asterisk/firmware/iax
 cp "$wwwDir/resources/sounds/moh/"* /storage/usbdisk1/mikopbx/media/moh/
-
-extensionDir="$(php -i | grep '^extension_dir' | cut -d ' ' -f 3)"
-ln -s "$wwwDir/resources/rootfs/usr/lib64/extensions/no-debug-zts-20190902/mikopbx.so" "$extensionDir/mikopbx.so"
 ln -s "$wwwDir/resources/sounds" /offload/asterisk/sounds
+
+mikopbx_extension_path="$(php -i | grep -m1 '^extension_dir' | cut -d ' ' -f 3)/mikopbx.so"
+case "$TARGETPLATFORM" in
+"linux/amd64") ln -s "$wwwDir/resources/rootfs/usr/lib64/extensions/no-debug-zts-*/mikopbx.so" "$mikopbx_extension_path" ;;
+"linux/arm64") ln -s "$wwwDir/resources/rootfs/usr/lib64/extensions/no-debug-zts-*/mikopbx-arm.so" "$mikopbx_extension_path" ;;
+esac
+if ! [[ -e $mikopbx_extension_path ]]; then
+  echo "unsupported platform '$TARGETPLATFORM' due to lack of pre-built lib '$mikopbx_extension_path'" >&1
+  exit 1
+fi
 
 for sbin_path in "$wwwDir/resources/rootfs/sbin" "$wwwDir/src/Core/System/RootFS/sbin"; do
   if ! [[ -e $sbin_path ]]; then

@@ -17,65 +17,17 @@
 # If not, see <https://www.gnu.org/licenses/>.
 #
 set -eux
+
 downloadFile() {
   extensionUrl="$1"
   curl -LO "$extensionUrl"
   arName=$(basename "$extensionUrl")
-  srcDirName=$(tar -tf "${PWD}/${arName}" | cut -f 1 -d '/' | sort -u | grep -v package.xml)
+  srcDirName="$(
+    tar -tf "${PWD}/${arName}" |
+      cut -f 1 -d '/' |
+      sort -u |
+      grep -v package.xml
+  )"
   tar xzf "${PWD}/${arName}" && rm "$_"
   realpath "$srcDirName"
 }
-
-installPhpExtension() {
-  extensionName="$1"
-  extensionUrl="$2"
-  extensionPriority="$3"
-  extensionPrefix="$4"
-  extensionConfOpt="$5"
-
-  srcDirName=$(downloadFile "$extensionUrl")
-  makePhpExtension "${srcDirName}" "$extensionConfOpt"
-  enablePhpExtension "$extensionName" "$extensionPriority" "$extensionPrefix"
-  rm -rf "${srcDirName}"
-}
-
-enablePhpExtension() {
-  libFileName="$1"
-  priority="$2"
-  prefix="$3"
-
-  modDir="/etc/php/$PHP_VERSION/mods-available"
-  if [ ! -d "$modDir" ]; then
-    realModDir='/etc/php.d'
-    mkdir -p "$realModDir"
-  else
-    realModDir=$modDir
-  fi
-  echo "${prefix}extension=${libFileName}.so" >"/tmp/${libFileName}.ini"
-  mv "/tmp/${libFileName}.ini" "${realModDir}/${libFileName}.ini"
-  if [ ! -d "$modDir" ]; then
-    return
-  fi
-
-  rm -rf "/etc/php/$PHP_VERSION/fpm/conf.d/${priority}-${libFileName}.ini" "/etc/php/$PHP_VERSION/cli/conf.d/${priority}-${libFileName}.ini"
-  links="$(find "/etc/php/$PHP_VERSION/cli/" -lname "/etc/php/$PHP_VERSION/mods-available/${libFileName}.ini")"
-  if [ 'x' = "${links}x" ]; then
-    ln -s "/etc/php/$PHP_VERSION/mods-available/${libFileName}.ini" "/etc/php/$PHP_VERSION/fpm/conf.d/${priority}-${libFileName}.ini"
-    ln -s "/etc/php/$PHP_VERSION/mods-available/${libFileName}.ini" "/etc/php/$PHP_VERSION/cli/conf.d/${priority}-${libFileName}.ini"
-  fi
-}
-
-makePhpExtension() {
-  srcDirName="$1"
-  confOptions="$2"
-  pushd "$srcDirName"
-
-  ${SUDO_CMD} phpize
-  ${SUDO_CMD} ./configure "$confOptions"
-  ${SUDO_CMD} make
-  ${SUDO_CMD} make install
-
-  popd
-}
-
-export makePhpExtension enablePhpExtension installPhpExtension

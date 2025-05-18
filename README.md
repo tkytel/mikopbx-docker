@@ -10,6 +10,16 @@
   <https://github.com/tkytel/mikopbx-docker/actions/workflows/pre-commit.yaml>
 )
 
+## Supported Platforms
+
+- `linux/arm64` (aarch64)
+- `linux/amd64` (x86_64)
+
+See also:
+
+- <https://github.com/mikopbx/Core/tree/develop/resources/rootfs/usr/lib64/extensions>
+- <https://github.com/mikopbx/Core/issues/889>
+
 ## Conformed versions of MikoPBX
 
 - [`dev-develop#fd4f4b622306a8dd1cb82c9ea5bcd4a16eb6b79a`](https://github.com/mikopbx/Core/tree/fd4f4b622306a8dd1cb82c9ea5bcd4a16eb6b79a)

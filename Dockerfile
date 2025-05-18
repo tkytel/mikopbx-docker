@@ -88,13 +88,13 @@ php -i | grep enabled
 mv /usr/local/etc/php/php.ini-production /etc/php.ini
 pecl config-set php_ini /etc/php.ini
 
-case "$TARGETPLATFORM" in \
-  "linux/arm64") ln -s /usr/lib/aarch64-linux-gnu/libldap.so /usr/lib/libldap.so ;; \
-  "linux/amd64") ln -s /usr/lib/x86_64-linux-gnu/libldap.so /usr/lib/libldap.so ;; \
-  "linux/386") ln -s /usr/lib/i386-linux-gnu/libldap.so /usr/lib/libldap.so ;; \
-  "linux/arm/v6") ln -s /usr/lib/arm-linux-gnueabi/libldap.so /usr/lib/libldap.so ;; \
-  "linux/arm/v7") ln -s /usr/lib/arm-linux-gnueabihf/libldap.so /usr/lib/libldap.so ;; \
-  *) ln -s /usr/lib/x86_64-linux-gnu/libldap.so /usr/lib/libldap.so ;; \
+case "$TARGETPLATFORM" in
+  "linux/arm64") ln -s /usr/lib/aarch64-linux-gnu/libldap.so /usr/lib/libldap.so ;;
+  "linux/amd64") ln -s /usr/lib/x86_64-linux-gnu/libldap.so /usr/lib/libldap.so ;;
+  "linux/386") ln -s /usr/lib/i386-linux-gnu/libldap.so /usr/lib/libldap.so ;;
+  "linux/arm/v6") ln -s /usr/lib/arm-linux-gnueabi/libldap.so /usr/lib/libldap.so ;;
+  "linux/arm/v7") ln -s /usr/lib/arm-linux-gnueabihf/libldap.so /usr/lib/libldap.so ;;
+  *) ln -s /usr/lib/x86_64-linux-gnu/libldap.so /usr/lib/libldap.so ;;
 esac
 
 docker-php-ext-configure pcntl --enable-pcntl

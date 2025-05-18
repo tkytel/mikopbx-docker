@@ -2,7 +2,8 @@
 set -eux
 
 if [[ -z $MIKO_PBX_VERSION ]]; then
-  MIKO_PBX_VERSION='dev-develop'
+  # https://github.com/mikopbx/Core/tree/fd4f4b622306a8dd1cb82c9ea5bcd4a16eb6b79a
+  MIKO_PBX_VERSION='dev-develop#fd4f4b622306a8dd1cb82c9ea5bcd4a16eb6b79a'
 fi
 
 honeDir='/home/www'
@@ -15,7 +16,8 @@ mkdir -p "$wwwDir" && chown www:www "$wwwDir"
 
 pushd "$wwwDir"
 
-# su www -c "composer require mikopbx/core:${MIKO_PBX_VERSION}"
+su www -c "composer require mikopbx/core:${MIKO_PBX_VERSION}"
+
 echo "${MIKO_PBX_VERSION}" >/etc/version
 busybox touch /etc/version.buildtime
 mv "$wwwDir/vendor/mikopbx/core/"* "$wwwDir/"

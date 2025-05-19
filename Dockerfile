@@ -109,7 +109,7 @@ else
   docker-php-ext-install -j"$(nproc)" json
 fi
 
-pecl install event
+pecl install ev event
 docker-php-ext-enable --ini-name zz-event.ini event
 
 EXTS=(psr mailparse igbinary msgpack xdebug yaml zephir_parser redis)
@@ -131,28 +131,19 @@ COPY ./packages/ ./packages/
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 RUN <<EOF
+set -eux
+
 source ./libs/functions.sh
 # shellcheck disable=SC1090
 source ./packages/41-asterisk.sh
-EOF
-
-RUN <<EOF
-source ./libs/functions.sh
-# shellcheck disable=SC1090
 source ./packages/50-nginx.sh
 EOF
 
 RUN <<EOF
 set -eux
-
-source ./libs/functions.sh
 # Add the 8021q module to autoload for VLAN support
 grep -q 8021q /etc/modules || sed -i '1i8021q' /etc/modules
-EOF
 
-RUN <<EOF
-source ./libs/functions.sh
-# shellcheck disable=SC1090
 source ./packages/99-install-mikopbx.sh
 EOF
 

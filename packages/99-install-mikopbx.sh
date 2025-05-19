@@ -89,15 +89,18 @@ mkdir -p /storage/usbdisk1 /storage/usbdisk1/mikopbx/media/moh /offload/asterisk
 cp "$wwwDir/resources/sounds/moh/"* /storage/usbdisk1/mikopbx/media/moh/
 ln -s "$wwwDir/resources/sounds" /offload/asterisk/sounds
 
-mikopbx_extension_path="$(php -i | grep -m1 '^extension_dir' | cut -d ' ' -f 3)/mikopbx.so"
+mikopbx_prebuilt_dir="$(find "/usr/www/resources/rootfs/usr/lib64/extensions" -type d -name 'no-debug-non-zts-*' -exec echo {} \; | sort -V | tail -1)"
+mikopbx_extension_dir="$(php -i | grep -m1 '^extension_dir' | cut -d ' ' -f 3 || :)"
+mkdir -p "$mikopbx_extension_dir"
+
 case "$TARGETPLATFORM" in
-"linux/amd64") ln -s "$wwwDir/resources/rootfs/usr/lib64/extensions/no-debug-zts-*/mikopbx.so" "$mikopbx_extension_path" ;;
-"linux/arm64") ln -s "$wwwDir/resources/rootfs/usr/lib64/extensions/no-debug-zts-*/mikopbx-arm.so" "$mikopbx_extension_path" ;;
-esac
-if ! [[ -e $mikopbx_extension_path ]]; then
-  echo "unsupported platform '$TARGETPLATFORM' due to lack of pre-built lib '$mikopbx_extension_path'" >&1
+"linux/amd64") ln -s "$mikopbx_prebuilt_dir/mikopbx.so" "$mikopbx_extension_dir/mikopbx.so" ;;
+"linux/arm64") ln -s "$mikopbx_prebuilt_dir/mikopbx-arm.so" "$mikopbx_extension_dir/mikopbx.so" ;;
+*)
+  echo "unsupported platform '$TARGETPLATFORM'" >&1
   exit 1
-fi
+  ;;
+esac
 
 for sbin_path in "$wwwDir/resources/rootfs/sbin" "$wwwDir/src/Core/System/RootFS/sbin"; do
   if ! [[ -e $sbin_path ]]; then

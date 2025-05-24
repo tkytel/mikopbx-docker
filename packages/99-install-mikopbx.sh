@@ -26,13 +26,21 @@ su www -c 'composer update'
 mkdir -p /offload/rootfs/usr/www/
 ln -s "$wwwDir/src/" /offload/rootfs/usr/www/src
 
-rm -rf /etc/php.ini /etc/php.d/ /etc/nginx/ /etc/php-fpm.conf /etc/php-www.conf
+rm -rf /etc/php.ini /etc/nginx/ /etc/php-fpm.conf /etc/php-www.conf
+mkdir -p /etc/php.d
 for etc_path in "$wwwDir/resources/rootfs/etc" "$wwwDir/src/Core/System/RootFS/etc"; do
   if ! [[ -e $etc_path ]]; then
     continue
   fi
+  for i in /usr/local/etc/php/conf.d/*.ini; do
+    ln -s "$i" "/etc/php.d/00-$(basename "$i")"
+  done
   ln -s "$etc_path/nginx" /etc/nginx
-  ln -s "$etc_path/php.d" /etc/php.d
+
+  ln -s "$etc_path/php.d/10-opcache.ini" /etc/php.d/10-opcache.ini
+  ln -s "$etc_path/php.d/15-ev.ini" /etc/php.d/15-ev.ini
+  ln -s "$etc_path/php.d/50-mikopbx.ini" /etc/php.d/99-mikopbx.ini
+
   ln -s "$etc_path/php.ini" /etc/php.ini
   ln -s "$etc_path/php-fpm.conf" /etc/php-fpm.conf
   ln -s "$etc_path/php-www.conf" /etc/php-www.conf

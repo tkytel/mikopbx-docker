@@ -6,7 +6,7 @@ RUN mv "$(which gnatsd)" ./
 
 ARG PHP_VERSION
 ARG DEBIAN_CODENAME
-FROM php:${PHP_VERSION:-8.3}-rc-fpm-${DEBIAN_CODENAME:-bookworm} AS builder
+FROM php:${PHP_VERSION:-8.3}-fpm-${DEBIAN_CODENAME:-bookworm} AS builder
 ENV PHP_VERSION=${PHP_VERSION:-8.3}
 
 LABEL maintainer="eggplants <w10776e8w@yahoo.co.jp>"

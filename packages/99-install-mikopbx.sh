@@ -26,6 +26,9 @@ su www -c 'composer update'
 mkdir -p /offload/rootfs/usr/www/
 ln -s "$wwwDir/src/" /offload/rootfs/usr/www/src
 
+# TODO: remove after merged https://github.com/mikopbx/Core/pull/893
+grep -lr '/usr/bin/php' "$wwwDir/src/" | xargs sed -r -i 's;/usr/bin/php( -f)?;/usr/bin/env -S php -f;'
+
 rm -rf /etc/php.ini /etc/nginx/ /etc/php-fpm.conf /etc/php-www.conf
 mkdir -p /etc/php.d
 for etc_path in "$wwwDir/resources/rootfs/etc" "$wwwDir/src/Core/System/RootFS/etc"; do
@@ -39,6 +42,9 @@ for etc_path in "$wwwDir/resources/rootfs/etc" "$wwwDir/src/Core/System/RootFS/e
 
   ln -s "$etc_path/php.d/10-opcache.ini" /etc/php.d/10-opcache.ini
   ln -s "$etc_path/php.d/15-ev.ini" /etc/php.d/15-ev.ini
+
+  # FIXME: https://github.com/mikopbx/Core/issues/892
+  sed -i 's!extension=mikopbx.so!# &!' "$etc_path/php.d/50-mikopbx.ini"
   ln -s "$etc_path/php.d/50-mikopbx.ini" /etc/php.d/99-mikopbx.ini
 
   ln -s "$etc_path/php.ini" /etc/php.ini

@@ -69,9 +69,10 @@ if ! [[ -e $config_path ]]; then
   exit 1
 fi
 
-mkdir -p /cf/conf/
-chown -R www:www /cf
-cp "$wwwDir/resources/db/mikopbx.db" /cf/conf/mikopbx.db
+mkdir -p /cf/conf/ /conf.default/
+chown -R www:www /cf /conf.default
+ln -s "$wwwDir/resources/db/mikopbx.db" /cf/conf/
+ln -s "$wwwDir/resources/db/mikopbx.db" /conf.default/
 
 chown -R asterisk:asterisk /etc/asterisk
 mkdir -p /offload/asterisk/

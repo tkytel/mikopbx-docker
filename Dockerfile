@@ -51,7 +51,7 @@ ESSENTIAL_PACKAGES=(
   libical-dev libspandsp-dev libresample1-dev libc-client2007e-dev binutils-dev libsrtp2-dev libsrtp2-dev
   libgsm1-dev doxygen graphviz libcodec2-dev libfftw3-dev libsndfile1-dev libunbound-dev
   # Asterisk: for the unpackaged below:
-  wget subversion p7zip-full sysstat dahdi-linux sox
+  wget subversion p7zip-full sysstat dahdi-linux sox rsyslog
   python3-dev vlan git ntp sqlite3 curl w3m lame libbz2-dev libgmp-dev libtonezone-dev
   fail2ban sngrep tcpdump msmtp beanstalkd
   libluajit2-5.1-2 libluajit2-5.1-dev lua-resty-core lua-resty-lrucache

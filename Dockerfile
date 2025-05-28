@@ -164,6 +164,8 @@ rm -rf /var/lib/apt/lists/*
 unset DEBIAN_FRONTEND
 EOF
 
-ENTRYPOINT ["/bin/sh", "/sbin/docker-entrypoint"]
+RUN chmod +x /usr/sbin/docker-entrypoint
+
+ENTRYPOINT ["/usr/sbin/docker-entrypoint"]
 
 EXPOSE 80 443 5060/udp 5060/tcp 5038 8088 8089 10000-11000/udp

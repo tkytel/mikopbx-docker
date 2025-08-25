@@ -2,8 +2,8 @@
 set -eux
 
 if [[ -z $MIKO_PBX_VERSION ]]; then
-  # https://github.com/mikopbx/Core/tree/fd4f4b622306a8dd1cb82c9ea5bcd4a16eb6b79a
-  MIKO_PBX_VERSION='dev-develop#fd4f4b622306a8dd1cb82c9ea5bcd4a16eb6b79a'
+  # https://github.com/mikopbx/Core/tree/5b15f5da681816858b7d0165d8b551d5155f0795
+  MIKO_PBX_VERSION='dev-develop#5b15f5da681816858b7d0165d8b551d5155f0795'
 fi
 
 honeDir='/home/www'

@@ -4,10 +4,10 @@
   <https://github.com/tkytel/mikopbx-docker/actions/workflows/release.yaml/badge.svg>
   )](
   <https://github.com/tkytel/mikopbx-docker/actions/workflows/release.yaml>
-) [![pre-commit](
-  <https://github.com/tkytel/mikopbx-docker/actions/workflows/pre-commit.yaml/badge.svg>
+) [![ci](
+  <https://github.com/tkytel/mikopbx-docker/actions/workflows/ci.yaml/badge.svg>
   )](
-  <https://github.com/tkytel/mikopbx-docker/actions/workflows/pre-commit.yaml>
+  <https://github.com/tkytel/mikopbx-docker/actions/workflows/ci.yaml>
 )
 
 ## Supported Platforms

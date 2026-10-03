@@ -1,0 +1,41 @@
+[settings]
+minimum_release_age = "7d"
+
+[tools]
+"aqua:azu/dockerfile-pin" = "latest" # [skip ci]
+claude = "latest" # [skip ci]
+pinact = "latest" # [skip ci]
+usage = "latest" # [skip ci]
+markdownlint-cli2 = "latest"
+shellcheck = "latest"
+shfmt = "latest"
+uv = "latest"
+
+[tasks.markdownlint]
+description = "Run markdownlint-cli2"
+run = "markdownlint-cli2 --fix"
+
+[tasks.shfmt]
+description = "Run shfmt"
+run = "shfmt -w -s -l -i 2 ."
+
+[tasks.shellcheck]
+description = "Run ShellCheck"
+run = "shfmt -f . | xargs -r shellcheck -x"
+depends = ["shfmt"]
+
+[tasks.pre-commit]
+description = "Run checks on pre-commit"
+depends = ["markdownlint", "shellcheck"]
+
+[tasks.ci]
+description = "Run CI checks"
+run = "git diff --exit-code"
+depends = ["pre-commit"]
+
+[tasks.pinup]
+description = "Update the pinned action and image digests"
+run = [
+  "pinact run -u --min-age 7",
+  "dockerfile-pin run -u --write --min-age 7",
+]

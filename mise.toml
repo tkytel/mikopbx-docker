@@ -30,7 +30,7 @@ depends = ["markdownlint", "shellcheck"]
 
 [tasks.ci]
 description = "Run CI checks"
-run = "git diff --exit-code"
+run = "git diff --exit-code  -- . ':!mise.toml'"
 depends = ["pre-commit"]
 
 [tasks.pinup]

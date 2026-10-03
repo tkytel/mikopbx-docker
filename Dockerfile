@@ -6,7 +6,7 @@ ARG DEBIAN_CODENAME=trixie
 # (patched NATS server with the license API).
 ARG MIKOPBX_BINARY_IMAGE=mikopbx/mikopbx:latest
 
-FROM ${MIKOPBX_BINARY_IMAGE} AS mikopbx-binary
+FROM ${MIKOPBX_BINARY_IMAGE}@sha256:91568202da4a7b862447ea000e31ab9a3c96e94e53b45510056b1fb2eba2a2b4 AS mikopbx-binary
 
 # The extension lives in /usr/lib64/extensions on amd64 and in
 # /usr/lib/extensions on arm64.
@@ -17,7 +17,7 @@ RUN mkdir -p /export \
 # -----------------------------------------------------------------------------
 # MikoPBX Core sources and PHP dependencies
 # -----------------------------------------------------------------------------
-FROM composer:2 AS core
+FROM composer:2@sha256:af98f42dfff7c68ba8d53c2164fd9fde1087b7d449514baa38c418b1f6bc4bac AS core
 
 # Any tag, branch or commit of https://github.com/mikopbx/Core
 ARG MIKOPBX_VERSION=2026.3.40
@@ -43,7 +43,7 @@ EOF
 # -----------------------------------------------------------------------------
 # PECL extensions not packaged by Debian
 # -----------------------------------------------------------------------------
-FROM debian:${DEBIAN_CODENAME} AS php-extensions
+FROM debian:${DEBIAN_CODENAME}@sha256:9cc080028c43b27d2074d63a5f9caf7166d731494965616c1a6d2827a004585c AS php-extensions
 
 ARG PHP_VERSION=8.4
 # https://pecl.php.net/package/phalcon (Core requires ^5.9.3)
@@ -82,7 +82,7 @@ EOF
 # -----------------------------------------------------------------------------
 # Asterisk
 # -----------------------------------------------------------------------------
-FROM debian:${DEBIAN_CODENAME} AS asterisk
+FROM debian:${DEBIAN_CODENAME}@sha256:9cc080028c43b27d2074d63a5f9caf7166d731494965616c1a6d2827a004585c AS asterisk
 
 # https://github.com/asterisk/asterisk/releases
 ARG ASTERISK_VERSION=22.8.2
@@ -116,7 +116,7 @@ RUN rm -rf /staging/var/run /staging/usr/include /staging/usr/share/man
 # BusyBox with all applets: MikoPBX runs "busybox nohup", "busybox lsof", ...
 # which Debian's busybox package does not include.
 # -----------------------------------------------------------------------------
-FROM debian:${DEBIAN_CODENAME} AS busybox
+FROM debian:${DEBIAN_CODENAME}@sha256:9cc080028c43b27d2074d63a5f9caf7166d731494965616c1a6d2827a004585c AS busybox
 
 # https://busybox.net/downloads/
 ARG BUSYBOX_VERSION=1.38.0
@@ -140,7 +140,7 @@ EOF
 # -----------------------------------------------------------------------------
 # MikoPBX
 # -----------------------------------------------------------------------------
-FROM debian:${DEBIAN_CODENAME}-slim
+FROM debian:${DEBIAN_CODENAME}-slim@sha256:a99cfc517144bc59b1978475ec53b46ecabec7e43635402ee5b77cc54cd1b20a
 
 ARG PHP_VERSION=8.4
 ARG MIKOPBX_VERSION=2026.3.40

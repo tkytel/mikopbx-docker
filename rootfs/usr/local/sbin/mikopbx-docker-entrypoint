@@ -1,0 +1,14 @@
+#!/bin/bash
+# Apply ID_WWW_USER / ID_WWW_GROUP to the "www" account, then hand over to
+# MikoPBX's own entrypoint.
+set -eu
+
+if [[ -n ${ID_WWW_GROUP:-} ]] && [[ "$(id -g www)" != "$ID_WWW_GROUP" ]]; then
+  groupmod -o -g "$ID_WWW_GROUP" www
+fi
+if [[ -n ${ID_WWW_USER:-} ]] && [[ "$(id -u www)" != "$ID_WWW_USER" ]]; then
+  usermod -o -u "$ID_WWW_USER" www
+fi
+chown www:www /var/lib/php/session
+
+exec /bin/sh /sbin/docker-entrypoint "$@"

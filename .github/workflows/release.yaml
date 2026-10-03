@@ -6,23 +6,28 @@ on:
       php_version:
         type: string
         required: true
-        description: PHP version
-        default: "8.3"
+        description: PHP version (must be packaged by the Debian release)
+        default: "8.4"
       debian_codename:
         type: string
         required: true
         description: Debian codename
-        default: "bookworm"
+        default: "trixie"
       phalcon_version:
         type: string
         required: true
         description: cphalcon version
-        default: "5.8.0"
+        default: "5.9.3"
+      asterisk_version:
+        type: string
+        required: true
+        description: Asterisk version
+        default: "22.8.2"
       miko_pbx_version:
         type: string
         required: true
-        description: MikoPBX version
-        default: "dev-develop"
+        description: MikoPBX version (tag, branch or commit of mikopbx/Core)
+        default: "2026.3.40"
 
 env:
   REGISTRY_IMAGE: ghcr.io/${{ github.repository }}
@@ -88,7 +93,8 @@ jobs:
             PHP_VERSION=${{ github.event.inputs.php_version }}
             DEBIAN_CODENAME=${{ github.event.inputs.debian_codename }}
             PHALCON_VERSION=${{ github.event.inputs.phalcon_version }}
-            MIKO_PBX_VERSION=${{ github.event.inputs.miko_pbx_version }}
+            ASTERISK_VERSION=${{ github.event.inputs.asterisk_version }}
+            MIKOPBX_VERSION=${{ github.event.inputs.miko_pbx_version }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest

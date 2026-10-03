@@ -1,129 +1,118 @@
 #!/bin/bash
-set -eux
+# Lay out MikoPBX Core (already copied to /usr/www) on top of Debian the same
+# way the official firmware image does.
+set -euxo pipefail
 
-if [[ -z $MIKO_PBX_VERSION ]]; then
-  # https://github.com/mikopbx/Core/tree/5b15f5da681816858b7d0165d8b551d5155f0795
-  MIKO_PBX_VERSION='dev-develop#5b15f5da681816858b7d0165d8b551d5155f0795'
-fi
+: "${MIKOPBX_VERSION:?}"
+: "${PHP_VERSION:?}"
 
-honeDir='/home/www'
 wwwDir='/usr/www'
+rootFs="$wwwDir/src/Core/System/RootFS"
+resources='/tmp/resources'
 
-id -u www &>/dev/null || useradd www
+# Users: MikoPBX runs nginx, php-fpm and dnsmasq as "www".
+groupadd -g 1011 www
+useradd -u 1011 -g www -d /tmp -s /bin/bash -c 'Web User' www
 
-mkdir -p "$honeDir" && chown www:www "$honeDir"
-mkdir -p "$wwwDir" && chown www:www "$wwwDir"
-
-pushd "$wwwDir"
-
-su www -c "composer require mikopbx/core:${MIKO_PBX_VERSION}"
-
-echo "${MIKO_PBX_VERSION}" >/etc/version
-busybox touch /etc/version.buildtime
-mv "$wwwDir/vendor/mikopbx/core/"* "$wwwDir/"
-su www -c 'composer update'
-
-mkdir -p /offload/rootfs/usr/www/
-ln -s "$wwwDir/src/" /offload/rootfs/usr/www/src
-
-# TODO: remove after merged https://github.com/mikopbx/Core/pull/893
-grep -lr '/usr/bin/php' "$wwwDir/src/" | xargs sed -r -i 's;/usr/bin/php( -f)?;/usr/bin/env -S php -f;'
-
-rm -rf /etc/php.ini /etc/nginx/ /etc/php-fpm.conf /etc/php-www.conf
-mkdir -p /etc/php.d
-for etc_path in "$wwwDir/resources/rootfs/etc" "$wwwDir/src/Core/System/RootFS/etc"; do
-  if ! [[ -e $etc_path ]]; then
-    continue
-  fi
-  for i in /usr/local/etc/php/conf.d/*.ini; do
-    ln -s "$i" "/etc/php.d/00-$(basename "$i")"
-  done
-  ln -s "$etc_path/nginx" /etc/nginx
-
-  ln -s "$etc_path/php.d/10-opcache.ini" /etc/php.d/10-opcache.ini
-  ln -s "$etc_path/php.d/15-ev.ini" /etc/php.d/15-ev.ini
-
-  # FIXME: https://github.com/mikopbx/Core/issues/892
-  sed -i 's!extension=mikopbx.so!# &!' "$etc_path/php.d/50-mikopbx.ini"
-  ln -s "$etc_path/php.d/50-mikopbx.ini" /etc/php.d/99-mikopbx.ini
-
-  ln -s "$etc_path/php.ini" /etc/php.ini
-  ln -s "$etc_path/php-fpm.conf" /etc/php-fpm.conf
-  ln -s "$etc_path/php-www.conf" /etc/php-www.conf
-  break
-done
-if ! ls /etc/{nginx,php.d,php.ini,php-fpm.conf,php-www.conf} 1>/dev/null; then
-  echo 'etc files are missing.' >&1
-  exit 1
-fi
-
-for config_path in "$wwwDir/config" "$wwwDir/src/Core/System/RootFS/etc/inc"; do
-  if ! [[ -e $config_path ]]; then
-    continue
-  fi
-  ln -s "$config_path" /etc/inc
-  break
-done
-if ! [[ -e $config_path ]]; then
-  echo 'inc dir is missing.' >&1
-  exit 1
-fi
-
-mkdir -p /cf/conf/ /conf.default/
-chown -R www:www /cf /conf.default
-ln -s "$wwwDir/resources/db/mikopbx.db" /cf/conf/
-ln -s "$wwwDir/resources/db/mikopbx.db" /conf.default/
-
-chown -R asterisk:asterisk /etc/asterisk
-mkdir -p /offload/asterisk/
-ln -s /usr/lib/asterisk/modules/ /offload/asterisk/modules
-ln -s /var/lib/asterisk/documentation/ /offload/asterisk/documentation
-ln -s /var/lib/asterisk/moh/ /offload/asterisk/moh
-mkdir -p /var/asterisk/run
-chown -R asterisk:asterisk /var/asterisk/run
-
-for rc_path in "$wwwDir/src/Core/Rc" "$wwwDir/src/Core/System/RootFS/etc/rc"; do
-  if ! [[ -e $rc_path ]]; then
-    continue
-  fi
-  ln -s "$rc_path" /etc/rc
-  chmod +x -R /etc/rc
-  chmod +x /etc/rc/debian/*
-  ln -s /etc/rc/debian/mikopbx.sh /etc/init.d/mikopbx
-  ln -s /etc/rc/debian/mikopbx_iptables /etc/init.d/mikopbx-iptables
-  break
-done
-if ! [[ -e /etc/rc ]]; then
-  echo 'rc directory is missing.' >&1
-  exit 1
-fi
-
-chown -R www:www /offload
-
-mkdir -p /storage/usbdisk1 /storage/usbdisk1/mikopbx/media/moh /offload/asterisk/firmware/iax
-cp "$wwwDir/resources/sounds/moh/"* /storage/usbdisk1/mikopbx/media/moh/
-ln -s "$wwwDir/resources/sounds" /offload/asterisk/sounds
-
-mikopbx_prebuilt_dir="$(find "/usr/www/resources/rootfs/usr/lib64/extensions" -type d -name 'no-debug-non-zts-*' -exec echo {} \; | sort -V | tail -1)"
-mikopbx_extension_dir="$(php -i | grep -m1 '^extension_dir' | cut -d ' ' -f 3 || :)"
-mkdir -p "$mikopbx_extension_dir"
-
-case "$TARGETPLATFORM" in
-"linux/amd64") ln -s "$mikopbx_prebuilt_dir/mikopbx.so" "$mikopbx_extension_dir/mikopbx.so" ;;
-"linux/arm64") ln -s "$mikopbx_prebuilt_dir/mikopbx-arm.so" "$mikopbx_extension_dir/mikopbx.so" ;;
-*)
-  echo "unsupported platform '$TARGETPLATFORM'" >&1
-  exit 1
-  ;;
-esac
-
-for sbin_path in "$wwwDir/resources/rootfs/sbin" "$wwwDir/src/Core/System/RootFS/sbin"; do
-  if ! [[ -e $sbin_path ]]; then
-    continue
-  fi
-  chmod +x "$sbin_path/"*
-  ln -sf "$sbin_path/"* /sbin/
-  break
+# On the official firmware /usr is /offload/rootfs/usr, and Core refers to
+# both paths (e.g. /offload/rootfs/usr/www, /offload/rootfs/usr/share/geolite2).
+mkdir -p /offload/rootfs/usr
+for dir in /usr/*; do
+  ln -s "$dir" "/offload/rootfs/usr/$(basename "$dir")"
 done
 
-popd
+# MikoPBX applies these owner and modes to the core at every boot
+# (Storage::applyFolderRights); doing it here keeps the boot from copying every
+# file up to the container layer.
+find "$wwwDir" -type d -exec chmod 755 {} +
+find "$wwwDir" -type f -exec chmod 644 {} +
+find "$wwwDir/src/Core/Asterisk/agi-bin" -type f -exec chmod 755 {} +
+chown -R www:www "$wwwDir"
+
+# /etc
+cp -R "$rootFs/etc/rc" "$rootFs/etc/inc" /etc/
+cp -R "$rootFs/etc/php.ini" "$rootFs/etc/php-fpm.conf" "$rootFs/etc/php-www.conf" "$rootFs/etc/profile" /etc/
+chmod -R +x /etc/rc
+
+# nginx: Core ships the whole /etc/nginx, but Debian loads dynamic modules
+# (lua, nchan, headers-more) from modules-enabled.
+mv /etc/nginx/modules-enabled /tmp/nginx-modules-enabled
+rm -rf /etc/nginx
+cp -R "$rootFs/etc/nginx" /etc/nginx
+mv /tmp/nginx-modules-enabled /etc/nginx/modules-enabled
+# Debian's nginx is built with --error-log-path=stderr, so without a main-level
+# error_log the daemon keeps the caller's stderr open and MikoPBX, which waits
+# for the output of "nginx", hangs at boot.
+sed -i '1i include /etc/nginx/modules-enabled/*.conf;\nerror_log /var/log/nginx_error.log;' /etc/nginx/nginx.conf
+
+# PHP: Core expects /etc/php.ini and /etc/php.d; point Debian's SAPI dirs there.
+mkdir -p /etc/php.d /var/lib/php/session
+chown www:www /var/lib/php/session
+cp -R "$rootFs/etc/php.d/." /etc/php.d/
+coreExtensions=" $(sed -n 's/^\(zend_\)\?extension=\(.*\)\.so$/\2/p' /etc/php.d/*.ini | tr '\n' ' ') "
+for ini in "/etc/php/${PHP_VERSION}/mods-available/"*.ini; do
+  name="$(basename "$ini" .ini)"
+  # Extensions loaded by Core's own ini files must not be loaded twice.
+  if [[ $coreExtensions == *" $name "* ]] || [[ $name == xdebug ]]; then
+    continue
+  fi
+  # Load them before Core's ones: event.so requires sockets.so, etc.
+  ln -s "$ini" "/etc/php.d/00-${name}.ini"
+done
+for sapi in cli fpm; do
+  rm -rf "/etc/php/${PHP_VERSION}/${sapi}/conf.d" "/etc/php/${PHP_VERSION}/${sapi}/php.ini"
+  ln -s /etc/php.d "/etc/php/${PHP_VERSION}/${sapi}/conf.d"
+  ln -s /etc/php.ini "/etc/php/${PHP_VERSION}/${sapi}/php.ini"
+done
+rm -f "/etc/php/${PHP_VERSION}/fpm/php-fpm.conf"
+ln -s /etc/php-fpm.conf "/etc/php/${PHP_VERSION}/fpm/php-fpm.conf"
+ln -sf "/usr/sbin/php-fpm${PHP_VERSION}" /usr/sbin/php-fpm
+
+# Rootless Docker cannot apply its AppArmor profile, so a host profile attached
+# to /usr/sbin/rsyslogd (Ubuntu ships one) confines the container's rsyslogd and
+# denies writing to /storage. Keep the binary under another path.
+dpkg-divert --local --rename --divert /usr/sbin/rsyslogd.distrib --add /usr/sbin/rsyslogd
+ln -s rsyslogd.distrib /usr/sbin/rsyslogd
+
+# fail2ban: Core generates its own jails; Debian's default sshd jail needs systemd.
+rm -f /etc/fail2ban/jail.d/defaults-debian.conf
+
+# /sbin helpers (Debian's /sbin is /usr/sbin).
+for f in "$rootFs/sbin/"*; do
+  install -m755 "$f" "/usr/sbin/$(basename "$f")"
+done
+
+# BusyBox applets Core calls directly from shell scripts.
+ln -sf /bin/busybox /usr/bin/ps
+for applet in ifconfig route ping arp nslookup udhcpc udhcpc6 syslogd logread crond killall vconfig; do
+  if ! command -v "$applet" >/dev/null; then
+    ln -s /bin/busybox "/usr/sbin/$applet"
+  fi
+done
+
+# Locales MikoPBX generates at boot when they are missing.
+for locale in en_US en_GB ru_RU; do
+  localedef -i "$locale" -f UTF-8 "$locale.UTF-8"
+done
+
+# Default configuration DB, sounds and other read-only resources.
+install -Dm644 "$resources/db/mikopbx.db" /conf.default/mikopbx.db
+mkdir -p /offload/asterisk
+cp -a "$resources/sounds-base" /offload/asterisk/sounds-base
+cp -an "$resources/rootfs/usr/share/." /usr/share/
+
+# Asterisk: MikoPBX keeps its data under /offload/asterisk.
+for dir in /var/lib/asterisk/*; do
+  mv "$dir" /offload/asterisk/
+done
+rm -rf /var/lib/asterisk
+ln -s /offload/asterisk /var/lib/asterisk
+mv /usr/lib/asterisk/modules /offload/asterisk/modules
+ln -s /offload/asterisk/modules /usr/lib/asterisk/modules
+mkdir -p /offload/asterisk/{agi-bin,firmware/iax,log,moh,run,sounds,spool,third-party} /var/asterisk/run
+rm -rf /etc/asterisk
+mkdir -p /etc/asterisk
+
+echo "$MIKOPBX_VERSION" >/etc/version
+date -u '+%Y-%m-%d %H:%M:%S' >/etc/version.buildtime
+cp /etc/version.buildtime /offload/version.buildtime

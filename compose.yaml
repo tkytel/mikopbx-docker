@@ -15,12 +15,11 @@ services:
   mikopbx:
     # image: mikopbx/mikopbx
     # image: ghcr.io/mikopbx/mikopbx-x86-64
-    image: ghcr.io/tkytel/mikopbx-docker:dev-develop
+    image: ghcr.io/tkytel/mikopbx-docker:2026.3.40
     build: .
     network_mode: "host"
     cap_add:
       - NET_ADMIN
-    entrypoint: "/usr/sbin/docker-entrypoint"
     hostname:  "mikopbx-in-a-docker"
     volumes:
       - /var/spool/mikopbx/cf:/cf

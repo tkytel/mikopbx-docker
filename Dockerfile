@@ -1,171 +1,232 @@
-FROM golang:bookworm AS gnatsd-builder
+# syntax=docker/dockerfile:1
 
-WORKDIR /work
-RUN go install github.com/nats-io/gnatsd@latest
-RUN mv "$(which gnatsd)" ./
+ARG DEBIAN_CODENAME=trixie
+# The official image provides two closed-source binaries that are not built
+# from github.com/mikopbx/Core: the "mikopbx" PHP extension and gnatsd
+# (patched NATS server with the license API).
+ARG MIKOPBX_BINARY_IMAGE=mikopbx/mikopbx:latest
 
-ARG PHP_VERSION
-ARG DEBIAN_CODENAME
-FROM php:${PHP_VERSION:-8.3}-fpm-${DEBIAN_CODENAME:-bookworm} AS builder
-ENV PHP_VERSION=${PHP_VERSION:-8.3}
+FROM ${MIKOPBX_BINARY_IMAGE} AS mikopbx-binary
 
-LABEL maintainer="eggplants <w10776e8w@yahoo.co.jp>"
+# The extension lives in /usr/lib64/extensions on amd64 and in
+# /usr/lib/extensions on arm64.
+RUN mkdir -p /export \
+  && cp "$(find /usr/lib/extensions /usr/lib64/extensions -name mikopbx.so 2>/dev/null | head -n 1)" /export/mikopbx.so \
+  && cp /usr/sbin/gnatsd /export/gnatsd
+
+# -----------------------------------------------------------------------------
+# MikoPBX Core sources and PHP dependencies
+# -----------------------------------------------------------------------------
+FROM composer:2 AS core
+
+# Any tag, branch or commit of https://github.com/mikopbx/Core
+ARG MIKOPBX_VERSION=2026.3.40
+ARG MIKOPBX_REPOSITORY=https://github.com/mikopbx/Core.git
+# https://github.com/openresty/lua-resty-redis/tags
+ARG LUA_RESTY_REDIS_VERSION=0.33
+
+WORKDIR /usr/www
+RUN <<EOF
+set -eux
+git init -q .
+git remote add origin "$MIKOPBX_REPOSITORY"
+git fetch -q --depth 1 origin "$MIKOPBX_VERSION"
+git checkout -q FETCH_HEAD
+composer install --no-dev --no-interaction --no-progress --optimize-autoloader --ignore-platform-reqs
+mkdir -p /tmp/resources /tmp/lua/resty
+mv resources/* /tmp/resources/
+find . -mindepth 1 -maxdepth 1 ! -name src ! -name sites ! -name vendor ! -name composer.json ! -name config.json -exec rm -rf {} +
+curl -fsSL -o /tmp/lua/resty/redis.lua \
+  "https://raw.githubusercontent.com/openresty/lua-resty-redis/v${LUA_RESTY_REDIS_VERSION}/lib/resty/redis.lua"
+EOF
+
+# -----------------------------------------------------------------------------
+# PECL extensions not packaged by Debian
+# -----------------------------------------------------------------------------
+FROM debian:${DEBIAN_CODENAME} AS php-extensions
+
+ARG PHP_VERSION=8.4
+# https://pecl.php.net/package/phalcon (Core requires ^5.9.3)
+ARG PHALCON_VERSION=5.9.3
+
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
+RUN <<EOF
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+  build-essential ca-certificates libevent-dev libssl-dev pkg-config \
+  "php${PHP_VERSION}-dev" php-pear
+EOF
+
+# GCC 14 turns -Wincompatible-pointer-types into an error, which the C code
+# generated for phalcon 5.9 does not pass.
+RUN <<EOF
+pecl channel-update pecl.php.net
+CFLAGS='-O2 -Wno-incompatible-pointer-types' MAKEFLAGS="-j$(nproc)" pecl install "phalcon-${PHALCON_VERSION}"
+EOF
+
+RUN <<EOF
+{ yes '' || :; } | pecl install ev
+pecl install -D 'enable-event-debug="no" enable-event-sockets="yes" with-event-libevent-dir="/usr" with-event-pthreads="no" with-event-extra="yes" with-event-openssl="yes" with-event-ns="no" with-openssl-dir="no"' event
+EOF
+
+COPY libs/ /build/libs/
+RUN <<EOF
+extensionDir="$(php-config --extension-dir)"
+for ext in phalcon ev event; do
+  install -Dm644 "${extensionDir}/${ext}.so" "/staging${extensionDir}/${ext}.so"
+done
+source /build/libs/functions.sh
+listRuntimePackages /staging >/staging/runtime-packages.txt
+EOF
+
+# -----------------------------------------------------------------------------
+# Asterisk
+# -----------------------------------------------------------------------------
+FROM debian:${DEBIAN_CODENAME} AS asterisk
+
+# https://github.com/asterisk/asterisk/releases
+ARG ASTERISK_VERSION=22.8.2
+# https://github.com/deepfryed/beanstalk-client/tags
+ARG BEANSTALK_CLIENT_VERSION=1.3.0
+
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
+RUN <<EOF
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+  autoconf automake build-essential bzip2 ca-certificates curl file libtool patch pkg-config python3 subversion \
+  libcurl4-openssl-dev libedit-dev libgsm1-dev libjansson-dev liblua5.4-dev libncurses-dev \
+  libogg-dev libopus-dev libopusfile-dev libpopt-dev libspandsp-dev libspeex-dev libspeexdsp-dev \
+  libsqlite3-dev libsrtp2-dev libssl-dev libunbound-dev libvorbis-dev libxml2-dev libxslt1-dev uuid-dev
+EOF
+
+COPY libs/ /build/libs/
+COPY packages/41-asterisk.sh /build/packages/
+WORKDIR /build/src
+RUN <<EOF
+DESTDIR=/staging ASTERISK_VERSION="$ASTERISK_VERSION" BEANSTALK_CLIENT_VERSION="$BEANSTALK_CLIENT_VERSION" \
+  /build/packages/41-asterisk.sh
+source /build/libs/functions.sh
+listRuntimePackages /staging >/staging/runtime-packages.txt
+EOF
+
+# /var/run is a symlink to /run on Debian; do not let COPY replace it.
+RUN rm -rf /staging/var/run /staging/usr/include /staging/usr/share/man
+
+# -----------------------------------------------------------------------------
+# BusyBox with all applets: MikoPBX runs "busybox nohup", "busybox lsof", ...
+# which Debian's busybox package does not include.
+# -----------------------------------------------------------------------------
+FROM debian:${DEBIAN_CODENAME} AS busybox
+
+# https://busybox.net/downloads/
+ARG BUSYBOX_VERSION=1.38.0
+
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
+RUN <<EOF
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends build-essential bzip2 ca-certificates curl
+EOF
+
+WORKDIR /build/src
+RUN <<EOF
+curl -fsSL "https://busybox.net/downloads/busybox-${BUSYBOX_VERSION}.tar.bz2" | tar xj --strip-components=1
+make defconfig
+# tc does not build against recent kernel headers and MikoPBX does not use it.
+sed -i 's/^CONFIG_TC=y$/# CONFIG_TC is not set/' .config
+make -j"$(nproc)"
+install -Dm755 busybox /staging/usr/bin/busybox
+EOF
+
+# -----------------------------------------------------------------------------
+# MikoPBX
+# -----------------------------------------------------------------------------
+FROM debian:${DEBIAN_CODENAME}-slim
+
+ARG PHP_VERSION=8.4
+ARG MIKOPBX_VERSION=2026.3.40
+
 LABEL org.opencontainers.image.description="MikoPBX - a free, open-source PBX with a friendly interface, based on Asterisk."
-LABEL org.opencontainers.image.documentation="https://docs.mikopbx.com/mikopbx/v/english/setup/docker"
-LABEL org.opencontainers.image.source="https://github.com/mikopbx/Core"
+LABEL org.opencontainers.image.documentation="https://docs.mikopbx.com/mikopbx/english/setup/docker"
+LABEL org.opencontainers.image.source="https://github.com/tkytel/mikopbx-docker"
 LABEL org.opencontainers.image.title="MikoPBX"
 LABEL org.opencontainers.image.url="https://www.mikopbx.com"
-LABEL org.opencontainers.image.vendor="MIKO LLC"
+LABEL org.opencontainers.image.version="${MIKOPBX_VERSION}"
 
-# https://github.com/phalcon/cphalcon/tags
-ARG PHALCON_VERSION
-ENV PHALCON_VERSION=${PHALCON_VERSION:-5.8.0}
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 
-# see: https://packagist.org/packages/mikopbx/core
-ARG MIKO_PBX_VERSION
-ENV MIKO_PBX_VERSION=${MIKO_PBX_VERSION:-dev-develop}
-
-ARG TARGETPLATFORM
-ENV TARGETPLATFORM=${TARGETPLATFORM}
-
-SHELL ["/bin/bash", "-euox", "pipefail", "-c"]
-
-COPY --from=gnatsd-builder /work/gnatsd /usr/sbin/gnatsd
+COPY --from=php-extensions /staging/runtime-packages.txt /tmp/php-runtime-packages.txt
+COPY --from=asterisk /staging/runtime-packages.txt /tmp/asterisk-runtime-packages.txt
 
 RUN <<EOF
 export DEBIAN_FRONTEND=noninteractive
-
-# Essential packages; should be exist on every architecture
-ESSENTIAL_PACKAGES=(
-  # Basic build system:
-  autoconf build-essential busybox ca-certificates curl dialog dropbear pkg-config
-  # Asterisk: basic requirements:
-  libedit-dev libjansson-dev libsqlite3-dev uuid-dev dahdi-linux linux-source
-  # PHP extension requirements:
-  libevent-dev libldap2-dev libpcre3-dev libssl-dev libtool libtool-bin libxml2-dev libyaml-dev libzip-dev libonig-dev libldb-dev libldap-dev redis
-  # Asterisk: for addons:
-  libspeex-dev libspeexdsp-dev libogg-dev libvorbis-dev libasound2-dev portaudio19-dev libcurl4-openssl-dev
-  xmlstarlet libpq-dev unixodbc-dev libneon27-dev libgmime-3.0-dev liburiparser-dev libxslt1-dev
-  libbluetooth-dev libradcli-dev freetds-dev libosptk-dev libjack-jackd2-dev
-  libsnmp-dev libiksemel-dev libcorosync-common-dev libcpg-dev libcfg-dev libnewt-dev libpopt-dev
-  libical-dev libspandsp-dev libresample1-dev libc-client2007e-dev binutils-dev libsrtp2-dev libsrtp2-dev
-  libgsm1-dev doxygen graphviz libcodec2-dev libfftw3-dev libsndfile1-dev libunbound-dev
-  # Asterisk: for the unpackaged below:
-  wget subversion p7zip-full sysstat dahdi-linux sox rsyslog
-  python3-dev vlan git ntp sqlite3 curl w3m lame libbz2-dev libgmp-dev libtonezone-dev
-  fail2ban sngrep tcpdump msmtp beanstalkd
-  libluajit2-5.1-2 libluajit2-5.1-dev lua-resty-core lua-resty-lrucache
+PACKAGES=(
+  # Base tools used by MikoPBX
+  bash ca-certificates cpio curl e2fsprogs gdisk iproute2 ipset iptables locales logrotate lsof
+  mtr-tiny openssl parted pv sqlite3 sysstat tcpdump tzdata xz-utils bzip2
+  # PHP
+  "php${PHP_VERSION}-cli" "php${PHP_VERSION}-fpm" "php${PHP_VERSION}-opcache"
+  "php${PHP_VERSION}-bcmath" "php${PHP_VERSION}-bz2" "php${PHP_VERSION}-curl" "php${PHP_VERSION}-gmp"
+  "php${PHP_VERSION}-igbinary" "php${PHP_VERSION}-ldap" "php${PHP_VERSION}-mailparse"
+  "php${PHP_VERSION}-mbstring" "php${PHP_VERSION}-msgpack" "php${PHP_VERSION}-redis"
+  "php${PHP_VERSION}-sqlite3" "php${PHP_VERSION}-xml" "php${PHP_VERSION}-yaml" "php${PHP_VERSION}-zip"
+  # Web server
+  nginx libnginx-mod-http-lua libnginx-mod-nchan libnginx-mod-http-headers-more-filter
+  # Services managed by MikoPBX
+  beanstalkd dnsmasq-base dropbear-bin fail2ban monit msmtp openssh-client redis-server rsyslog
+  # Media and diagnostics
+  ffmpeg lame mpg123 sngrep sox
 )
-
-# Optional packages; desirable, but possibly not existent package on some architecture
-OPTIONAL_PACKAGES=(
-  # Asterisk: for the unpackaged below:
-  open-vm-tools
-)
-
 apt-get update
-apt-get -y install "${ESSENTIAL_PACKAGES[@]}"
+# shellcheck disable=SC2046
+apt-get install -y --no-install-recommends "${PACKAGES[@]}" \
+  $(cat /tmp/php-runtime-packages.txt /tmp/asterisk-runtime-packages.txt)
+apt-get clean
+rm -rf /var/lib/apt/lists/* /tmp/*-runtime-packages.txt
+EOF
 
-# Install optional packages with ignoring error
-for pkg in "${OPTIONAL_PACKAGES[@]}"; do
-  apt-get install -y "$pkg" || true
+COPY --from=php-extensions /staging/ /
+COPY --from=asterisk /staging/ /
+COPY --from=busybox /staging/ /
+COPY --from=mikopbx-binary /export/gnatsd /usr/sbin/gnatsd
+COPY --from=mikopbx-binary /export/mikopbx.so /tmp/mikopbx.so
+COPY --from=core /usr/www/ /usr/www/
+COPY --from=core /tmp/resources/ /tmp/resources/
+COPY --from=core /tmp/lua/ /usr/share/lua/5.1/
+COPY rootfs/ /
+COPY packages/99-install-mikopbx.sh /tmp/
+
+RUN <<EOF
+rm -f /runtime-packages.txt
+ldconfig
+install -m644 /tmp/mikopbx.so "$(php -n -r 'echo ini_get("extension_dir");')/mikopbx.so"
+
+# BusyBox-compatible user management (see the script for details).
+for cmd in adduser addgroup deluser delgroup; do
+  if [[ -e /usr/sbin/$cmd ]]; then
+    dpkg-divert --local --rename --add "/usr/sbin/$cmd"
+  fi
+  ln -s /usr/local/lib/mikopbx-docker/busybox-user-tools.sh "/usr/sbin/$cmd"
 done
 
-rm -rf /bin/ps
-ln -s /bin/busybox /bin/ps
-ln -s /bin/busybox /bin/ifconfig
-ln -s /bin/busybox /bin/ping
-ln -s /bin/busybox /bin/route
-ln -sf /bin/busybox /bin/killall
-ln -s /usr/sbin/cron /usr/sbin/crond
+MIKOPBX_VERSION="$MIKOPBX_VERSION" PHP_VERSION="$PHP_VERSION" /tmp/99-install-mikopbx.sh
+rm -rf /tmp/*
 
-unset DEBIAN_FRONTEND
+# Docker creates it, other runtimes do not; MikoPBX uses it to detect containers.
+touch /.dockerenv
+
+# Fail the build early if something essential is missing.
+php -m | grep -qx phalcon
+php -m | grep -qx mikopbx
+for lib in /usr/sbin/asterisk /offload/asterisk/modules/*.so "$(php -r 'echo ini_get("extension_dir");')"/*.so; do
+  if ldd "$lib" | grep -q 'not found'; then
+    ldd "$lib"
+    exit 1
+  fi
+done
+nginx -t
+rm -f /var/log/nginx_*.log
 EOF
 
-RUN <<EOF
-php -i | grep enabled
-
-mv /usr/local/etc/php/php.ini-production /etc/php.ini
-pecl config-set php_ini /etc/php.ini
-
-case "$TARGETPLATFORM" in
-  "linux/arm64") ln -s /usr/lib/aarch64-linux-gnu/libldap.so /usr/lib/libldap.so ;;
-  "linux/amd64") ln -s /usr/lib/x86_64-linux-gnu/libldap.so /usr/lib/libldap.so ;;
-  "linux/386") ln -s /usr/lib/i386-linux-gnu/libldap.so /usr/lib/libldap.so ;;
-  "linux/arm/v6") ln -s /usr/lib/arm-linux-gnueabi/libldap.so /usr/lib/libldap.so ;;
-  "linux/arm/v7") ln -s /usr/lib/arm-linux-gnueabihf/libldap.so /usr/lib/libldap.so ;;
-  *) ln -s /usr/lib/x86_64-linux-gnu/libldap.so /usr/lib/libldap.so ;;
-esac
-
-docker-php-ext-configure pcntl --enable-pcntl
-docker-php-ext-install -j"$(nproc)" \
-  ldap \
-  pcntl \
-  sockets \
-  zip
-if [[ "$PHP_VERSION" =~ ^8\. ]]; then
-  :
-else
-  docker-php-ext-install -j"$(nproc)" json
-fi
-
-pecl install ev event
-docker-php-ext-enable --ini-name zz-event.ini event
-
-EXTS=(psr mailparse igbinary msgpack xdebug yaml zephir_parser redis)
-pecl install -s "${EXTS[@]}"
-docker-php-ext-enable "${EXTS[@]}"
-
-pecl install -s "phalcon-${PHALCON_VERSION}" &> /dev/null
-docker-php-ext-enable phalcon
-pecl clear-cache
-EOF
-
-WORKDIR /root/install
-
-ENV PATH="$PATH:/sbin:/usr/sbin"
-
-COPY ./libs/ ./libs/
-COPY ./packages/ ./packages/
-
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-RUN <<EOF
-set -eux
-
-source ./libs/functions.sh
-# shellcheck disable=SC1090
-source ./packages/41-asterisk.sh
-source ./packages/50-nginx.sh
-EOF
-
-RUN <<EOF
-set -eux
-# Add the 8021q module to autoload for VLAN support
-grep -q 8021q /etc/modules || sed -i '1i8021q' /etc/modules
-
-source ./packages/99-install-mikopbx.sh
-EOF
-
-ENV PHP_INI_SCAN_DIR=/etc/php.d
-
-RUN <<EOF
-export DEBIAN_FRONTEND=noninteractive
-
-# TODO: check installation after finished install.sh
-# pdnsd
-# PDNSD_URL="https://cloudfront.debian.net/debian-archive/debian/pool/main/p/pdnsd/pdnsd_1.2.9a-par-2_$(dpkg --print-architecture).deb"
-# curl -OL "$PDNSD_URL"
-# apt-get install -y ./"$(basename "$PDNSD_URL")"
-# rm "$_"
-
-apt-get clean
-rm -rf /var/lib/apt/lists/*
-unset DEBIAN_FRONTEND
-EOF
-
-RUN chmod +x /usr/sbin/docker-entrypoint
-
-ENTRYPOINT ["/usr/sbin/docker-entrypoint"]
+ENTRYPOINT ["/usr/local/sbin/mikopbx-docker-entrypoint"]
 
 EXPOSE 80 443 5060/udp 5060/tcp 5038 8088 8089 10000-11000/udp

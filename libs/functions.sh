@@ -20,7 +20,7 @@ set -eux
 
 downloadFile() {
   extensionUrl="$1"
-  curl -LO "$extensionUrl"
+  curl -fsSLO "$extensionUrl"
   arName=$(basename "$extensionUrl")
   srcDirName="$(
     tar -tf "${PWD}/${arName}" |
@@ -30,4 +30,20 @@ downloadFile() {
   )"
   tar xzf "${PWD}/${arName}" && rm "$_"
   realpath "$srcDirName"
+}
+
+# Print Debian packages providing the shared libraries that ELF files under the
+# given directory are linked against. Used to install only runtime libraries
+# into the final image.
+listRuntimePackages() {
+  local root="$1"
+  find "$root" -type f \( -name '*.so*' -o -perm -u+x \) -print0 |
+    { xargs -0 -r env LD_LIBRARY_PATH="${root}/usr/lib" ldd 2>/dev/null || :; } |
+    awk -v root="${root}/" '$2 == "=>" && $3 ~ /^\// && index($3, root) != 1 {print $3}' |
+    sort -u |
+    xargs -r realpath |
+    { xargs -r dpkg -S 2>/dev/null || :; } |
+    grep -v '^diversion' |
+    cut -d: -f1 |
+    sort -u
 }

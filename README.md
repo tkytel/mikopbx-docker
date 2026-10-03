@@ -1,5 +1,11 @@
 # mikopbx-docker
 
+[![image tags] ![image latest] ![image size]](https://github.com/tkytel/mikopbx-docker/pkgs/container/mikopbx-docker)
+
+[image tags]: <https://ghcr-badge.egpl.dev/tkytel/mikopbx-docker/tags?trim=major>
+[image latest]: <https://ghcr-badge.egpl.dev/tkytel/mikopbx-docker/latest_tag?trim=major&label=latest>
+[image size]: <https://ghcr-badge.egpl.dev/tkytel/mikopbx-docker/size?tag=2026.3.40>
+
 [![Release Package](
   <https://github.com/tkytel/mikopbx-docker/actions/workflows/release.yaml/badge.svg>
   )](

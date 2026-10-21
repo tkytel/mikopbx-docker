@@ -257,4 +257,5 @@ EOF
 
 ENTRYPOINT ["/usr/local/sbin/mikopbx-docker-entrypoint"]
 
-EXPOSE 80 443 5060/udp 5060/tcp 5038 8088 8089 10000-11000/udp
+# Defaults when WEB_PORT / WEB_HTTPS_PORT are unset; RTP is MikoPBX's default range.
+EXPOSE 80 443 5060/udp 5060/tcp 5038 8088 8089 10000-10800/udp

@@ -166,6 +166,11 @@ FROM debian:${DEBIAN_CODENAME}-slim@sha256:a99cfc517144bc59b1978475ec53b46ecabec
 
 ARG PHP_VERSION=8.4
 ARG MIKOPBX_VERSION=2026.3.40
+# UID/GID of the "www" account, which owns the image's files. When ID_WWW_USER /
+# ID_WWW_GROUP differ, MikoPBX re-owns /usr/www at every boot, copying it into
+# the container layer; build with the host's IDs to avoid that.
+ARG WWW_UID=1011
+ARG WWW_GID=1011
 
 LABEL org.opencontainers.image.description="MikoPBX - a free, open-source PBX with a friendly interface, based on Asterisk."
 LABEL org.opencontainers.image.documentation="https://docs.mikopbx.com/mikopbx/english/setup/docker"
@@ -230,7 +235,8 @@ for cmd in adduser addgroup deluser delgroup; do
   ln -s /usr/local/lib/mikopbx-docker/busybox-user-tools.sh "/usr/sbin/$cmd"
 done
 
-MIKOPBX_VERSION="$MIKOPBX_VERSION" PHP_VERSION="$PHP_VERSION" /tmp/99-install-mikopbx.sh
+MIKOPBX_VERSION="$MIKOPBX_VERSION" PHP_VERSION="$PHP_VERSION" WWW_UID="$WWW_UID" WWW_GID="$WWW_GID" \
+  /tmp/99-install-mikopbx.sh
 rm -rf /tmp/*
 
 # Docker creates it, other runtimes do not; MikoPBX uses it to detect containers.

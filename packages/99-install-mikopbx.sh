@@ -5,14 +5,16 @@ set -euxo pipefail
 
 : "${MIKOPBX_VERSION:?}"
 : "${PHP_VERSION:?}"
+: "${WWW_UID:?}"
+: "${WWW_GID:?}"
 
 wwwDir='/usr/www'
 rootFs="$wwwDir/src/Core/System/RootFS"
 resources='/tmp/resources'
 
 # Users: MikoPBX runs nginx, php-fpm and dnsmasq as "www".
-groupadd -g 1011 www
-useradd -u 1011 -g www -d /tmp -s /bin/bash -c 'Web User' www
+groupadd -g "$WWW_GID" www
+useradd -u "$WWW_UID" -g www -d /tmp -s /bin/bash -c 'Web User' www
 
 # On the official firmware /usr is /offload/rootfs/usr, and Core refers to
 # both paths (e.g. /offload/rootfs/usr/www, /offload/rootfs/usr/share/geolite2).

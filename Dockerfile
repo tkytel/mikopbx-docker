@@ -5,12 +5,12 @@
 # A --build-arg that does not match the pinned image fails the build.
 ARG DEBIAN_CODENAME=trixie
 # A tag of https://github.com/mikopbx/Core that mikopbx/mikopbx is also tagged with
-ARG MIKOPBX_VERSION=2026.3.40
+ARG MIKOPBX_VERSION=2026.5.6
 
 # The official image of the same version provides two closed-source binaries
 # that are not built from github.com/mikopbx/Core: the "mikopbx" PHP extension
 # and gnatsd (patched NATS server with the license API). They must match Core.
-FROM mikopbx/mikopbx:${MIKOPBX_VERSION}@sha256:91568202da4a7b862447ea000e31ab9a3c96e94e53b45510056b1fb2eba2a2b4 AS mikopbx-binary
+FROM mikopbx/mikopbx:${MIKOPBX_VERSION}@sha256:0fcd3e8e2c026bcf5ef6cdeb936b1829f098074bfd7018064e7d7b1088e71758 AS mikopbx-binary
 
 ARG MIKOPBX_VERSION
 # The extension lives in /usr/lib64/extensions on amd64 and in
@@ -111,9 +111,9 @@ FROM debian:${DEBIAN_CODENAME}@sha256:9cc080028c43b27d2074d63a5f9caf7166d7314949
 
 ARG DEBIAN_CODENAME
 # https://github.com/asterisk/asterisk/releases
-ARG ASTERISK_VERSION=22.8.2
+ARG ASTERISK_VERSION=22.11.0
 # asterisk-${ASTERISK_VERSION}.sha256 in the release
-ARG ASTERISK_SHA256=8dd373ce0771a9ed40bb54a72a889ccdd14c0cee458ed68da9ce913a668e4b22
+ARG ASTERISK_SHA256=3bd5ee040509a3d3cd9b1ba9520c18e6ec0a7e7981ca68c457dcd36ba3c54d94
 # https://github.com/deepfryed/beanstalk-client/tags
 ARG BEANSTALK_CLIENT_VERSION=1.3.0
 ARG BEANSTALK_CLIENT_SHA256=3bc98f58e08e9fe21508641893a14fe038281546e45613c3aab1c2b051402d5c

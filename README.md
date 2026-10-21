@@ -4,7 +4,7 @@
 
 [image tags]: <https://ghcr-badge.egpl.dev/tkytel/mikopbx-docker/tags?trim=major>
 [image latest]: <https://ghcr-badge.egpl.dev/tkytel/mikopbx-docker/latest_tag?trim=major&label=latest>
-[image size]: <https://ghcr-badge.egpl.dev/tkytel/mikopbx-docker/size?tag=2026.3.40>
+[image size]: <https://ghcr-badge.egpl.dev/tkytel/mikopbx-docker/size?tag=2026.5.6>
 
 [![Release Package](
   <https://github.com/tkytel/mikopbx-docker/actions/workflows/release.yaml/badge.svg>
@@ -20,21 +20,21 @@ Docker image of [MikoPBX](https://github.com/mikopbx/Core) built on Debian from 
 
 ## Conformed versions of MikoPBX
 
-- [`2026.3.40`](https://github.com/mikopbx/Core/tree/2026.3.40)
+- [`2026.5.6`](https://github.com/mikopbx/Core/tree/2026.5.6)
 
 ## How to build
 
 ```bash
-docker build . -t tkytel/mikopbx-docker:2026.3.40
+docker build . -t tkytel/mikopbx-docker:2026.5.6
 
 # Own the image's files by the host's www-user (see "How to use image")
 docker build . \
   --build-arg WWW_UID="$(id -u www-user)" \
   --build-arg WWW_GID="$(id -g www-user)" \
-  -t tkytel/mikopbx-docker:2026.3.40
+  -t tkytel/mikopbx-docker:2026.5.6
 
 # Check that the image boots
-scripts/smoke-test.sh tkytel/mikopbx-docker:2026.3.40
+scripts/smoke-test.sh tkytel/mikopbx-docker:2026.5.6
 ```
 
 ## How to update

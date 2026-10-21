@@ -23,3 +23,21 @@ jobs:
       - run: sed -i '/# \[skip ci\]/d' mise.toml
       - uses: jdx/mise-action@7a4e45a543138629540c9a1616d08632b893e492 # v5.0.1
       - run: mise run ci
+
+  # Build the image for amd64 and check that MikoPBX boots. Shares the layer
+  # cache with the release workflow, so only changed stages are rebuilt.
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          tags: mikopbx-docker:ci
+          cache-from: type=gha,scope=linux-amd64
+          cache-to: type=gha,scope=linux-amd64,mode=max
+      - run: scripts/smoke-test.sh mikopbx-docker:ci

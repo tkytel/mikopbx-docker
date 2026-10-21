@@ -89,6 +89,8 @@ jobs:
           context: .
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ env.PLATFORM_PAIR }}
+          cache-to: type=gha,scope=${{ env.PLATFORM_PAIR }},mode=max
           build-args: |
             PHP_VERSION=${{ github.event.inputs.php_version }}
             DEBIAN_CODENAME=${{ github.event.inputs.debian_codename }}

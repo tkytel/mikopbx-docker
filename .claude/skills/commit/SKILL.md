@@ -3,6 +3,8 @@ name: commit
 description: Analyze the git diff and commit it following this project's conventions.
 ---
 
+# Commit
+
 ## Steps
 
 1. Read every change with `git status` and `git diff HEAD`
@@ -15,7 +17,7 @@ description: Analyze the git diff and commit it following this project's convent
 
 ### Subject
 
-```
+```text
 type: what changed, in English
 ```
 
@@ -38,7 +40,7 @@ unrelated things at once, which usually means it should have been split.
 ## How to split
 
 | Situation | Call |
-|-----------|------|
+| ----------- | ------ |
 | A shared/base change plus the callers that use it | Separate commits |
 | A feature and its tests | One commit |
 | A bug fix and an unrelated refactor | Separate commits |

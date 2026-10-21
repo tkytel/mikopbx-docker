@@ -18,10 +18,13 @@
 #
 set -eux
 
+# downloadFile URL SHA256: download and verify a tarball, extract it, and print
+# the extracted directory.
 downloadFile() {
   extensionUrl="$1"
   curl -fsSLO "$extensionUrl"
   arName=$(basename "$extensionUrl")
+  echo "$2  $arName" | sha256sum -c - >&2
   srcDirName="$(
     tar -tf "${PWD}/${arName}" |
       cut -f 1 -d '/' |
@@ -30,6 +33,16 @@ downloadFile() {
   )"
   tar xzf "${PWD}/${arName}" && rm "$_"
   realpath "$srcDirName"
+}
+
+# downloadPecl NAME-VERSION SHA256: download and verify a PECL package and print
+# its path. "pecl install NAME-VERSION" resolves through PECL's REST metadata,
+# which it cannot read for some packages (ev: "does not have REST xml available").
+downloadPecl() {
+  local file="/tmp/$1.tgz"
+  curl -fsSL -o "$file" "https://pecl.php.net/get/$1.tgz"
+  echo "$2  $file" | sha256sum -c - >&2
+  echo "$file"
 }
 
 # Print Debian packages providing the shared libraries that ELF files under the

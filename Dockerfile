@@ -24,6 +24,7 @@ ARG MIKOPBX_VERSION=2026.3.40
 ARG MIKOPBX_REPOSITORY=https://github.com/mikopbx/Core.git
 # https://github.com/openresty/lua-resty-redis/tags
 ARG LUA_RESTY_REDIS_VERSION=0.33
+ARG LUA_RESTY_REDIS_SHA256=29f16af1d743bdbbdeb256bf01878b1f95dbdbce5a5a0fac9074b3778614c2d8
 
 WORKDIR /usr/www
 RUN <<EOF
@@ -38,6 +39,7 @@ mv resources/* /tmp/resources/
 find . -mindepth 1 -maxdepth 1 ! -name src ! -name sites ! -name vendor ! -name composer.json ! -name config.json -exec rm -rf {} +
 curl -fsSL -o /tmp/lua/resty/redis.lua \
   "https://raw.githubusercontent.com/openresty/lua-resty-redis/v${LUA_RESTY_REDIS_VERSION}/lib/resty/redis.lua"
+echo "$LUA_RESTY_REDIS_SHA256  /tmp/lua/resty/redis.lua" | sha256sum -c -
 EOF
 
 # -----------------------------------------------------------------------------
@@ -48,28 +50,38 @@ FROM debian:${DEBIAN_CODENAME}@sha256:9cc080028c43b27d2074d63a5f9caf7166d7314949
 ARG PHP_VERSION=8.4
 # https://pecl.php.net/package/phalcon (Core requires ^5.9.3)
 ARG PHALCON_VERSION=5.9.3
+ARG PHALCON_SHA256=2b1983f09b56fc2779509a8ac1df776c368782538a7ef6601c0d4aef9892fe83
+# https://pecl.php.net/package/ev, https://pecl.php.net/package/event
+ARG EV_VERSION=1.2.3
+ARG EV_SHA256=5ea937d3b81c24fd76a6772c2b202a13bc561a4348743a011bd1a7a39eb9fdba
+ARG EVENT_VERSION=3.1.6
+ARG EVENT_SHA256=5b74554c6370aae8c284c8110fe27e071d3f663953c3eb762ffc429b0a3c83a2
 
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 RUN <<EOF
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-  build-essential ca-certificates libevent-dev libssl-dev pkg-config \
+  build-essential ca-certificates curl libevent-dev libssl-dev pkg-config \
   "php${PHP_VERSION}-dev" php-pear
 EOF
+
+COPY libs/ /build/libs/
 
 # GCC 14 turns -Wincompatible-pointer-types into an error, which the C code
 # generated for phalcon 5.9 does not pass.
 RUN <<EOF
-pecl channel-update pecl.php.net
-CFLAGS='-O2 -Wno-incompatible-pointer-types' MAKEFLAGS="-j$(nproc)" pecl install "phalcon-${PHALCON_VERSION}"
+source /build/libs/functions.sh
+CFLAGS='-O2 -Wno-incompatible-pointer-types' MAKEFLAGS="-j$(nproc)" \
+  pecl install "$(downloadPecl "phalcon-${PHALCON_VERSION}" "$PHALCON_SHA256")"
 EOF
 
 RUN <<EOF
-{ yes '' || :; } | pecl install ev
-pecl install -D 'enable-event-debug="no" enable-event-sockets="yes" with-event-libevent-dir="/usr" with-event-pthreads="no" with-event-extra="yes" with-event-openssl="yes" with-event-ns="no" with-openssl-dir="no"' event
+source /build/libs/functions.sh
+{ yes '' || :; } | pecl install "$(downloadPecl "ev-${EV_VERSION}" "$EV_SHA256")"
+pecl install -D 'enable-event-debug="no" enable-event-sockets="yes" with-event-libevent-dir="/usr" with-event-pthreads="no" with-event-extra="yes" with-event-openssl="yes" with-event-ns="no" with-openssl-dir="no"' \
+  "$(downloadPecl "event-${EVENT_VERSION}" "$EVENT_SHA256")"
 EOF
 
-COPY libs/ /build/libs/
 RUN <<EOF
 extensionDir="$(php-config --extension-dir)"
 for ext in phalcon ev event; do
@@ -86,8 +98,11 @@ FROM debian:${DEBIAN_CODENAME}@sha256:9cc080028c43b27d2074d63a5f9caf7166d7314949
 
 # https://github.com/asterisk/asterisk/releases
 ARG ASTERISK_VERSION=22.8.2
+# asterisk-${ASTERISK_VERSION}.sha256 in the release
+ARG ASTERISK_SHA256=8dd373ce0771a9ed40bb54a72a889ccdd14c0cee458ed68da9ce913a668e4b22
 # https://github.com/deepfryed/beanstalk-client/tags
 ARG BEANSTALK_CLIENT_VERSION=1.3.0
+ARG BEANSTALK_CLIENT_SHA256=3bc98f58e08e9fe21508641893a14fe038281546e45613c3aab1c2b051402d5c
 
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 RUN <<EOF
@@ -103,7 +118,9 @@ COPY libs/ /build/libs/
 COPY packages/41-asterisk.sh /build/packages/
 WORKDIR /build/src
 RUN <<EOF
-DESTDIR=/staging ASTERISK_VERSION="$ASTERISK_VERSION" BEANSTALK_CLIENT_VERSION="$BEANSTALK_CLIENT_VERSION" \
+DESTDIR=/staging \
+  ASTERISK_VERSION="$ASTERISK_VERSION" ASTERISK_SHA256="$ASTERISK_SHA256" \
+  BEANSTALK_CLIENT_VERSION="$BEANSTALK_CLIENT_VERSION" BEANSTALK_CLIENT_SHA256="$BEANSTALK_CLIENT_SHA256" \
   /build/packages/41-asterisk.sh
 source /build/libs/functions.sh
 listRuntimePackages /staging >/staging/runtime-packages.txt
@@ -120,6 +137,8 @@ FROM debian:${DEBIAN_CODENAME}@sha256:9cc080028c43b27d2074d63a5f9caf7166d7314949
 
 # https://busybox.net/downloads/
 ARG BUSYBOX_VERSION=1.38.0
+# busybox-${BUSYBOX_VERSION}.tar.bz2.sha256 on the download page
+ARG BUSYBOX_SHA256=34f9ea6ff8636f2c9241153b9114eefa9e65674a45318ae1ef95bb5f31c53bb2
 
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 RUN <<EOF
@@ -129,7 +148,10 @@ EOF
 
 WORKDIR /build/src
 RUN <<EOF
-curl -fsSL "https://busybox.net/downloads/busybox-${BUSYBOX_VERSION}.tar.bz2" | tar xj --strip-components=1
+curl -fsSL -o /tmp/busybox.tar.bz2 "https://busybox.net/downloads/busybox-${BUSYBOX_VERSION}.tar.bz2"
+echo "$BUSYBOX_SHA256  /tmp/busybox.tar.bz2" | sha256sum -c -
+tar xjf /tmp/busybox.tar.bz2 --strip-components=1
+rm /tmp/busybox.tar.bz2
 make defconfig
 # tc does not build against recent kernel headers and MikoPBX does not use it.
 sed -i 's/^CONFIG_TC=y$/# CONFIG_TC is not set/' .config

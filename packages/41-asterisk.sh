@@ -4,7 +4,9 @@
 set -euxo pipefail
 
 : "${ASTERISK_VERSION:?}"
+: "${ASTERISK_SHA256:?}"
 : "${BEANSTALK_CLIENT_VERSION:?}"
+: "${BEANSTALK_CLIENT_SHA256:?}"
 : "${DESTDIR:?}"
 
 # shellcheck source=libs/functions.sh
@@ -12,7 +14,7 @@ source "$(dirname "$0")/../libs/functions.sh"
 
 # https://github.com/deepfryed/beanstalk-client
 # cel_beanstalkd.so delivers CEL events to beanstalkd; MikoPBX builds CDRs from them.
-srcDirName="$(downloadFile "https://github.com/deepfryed/beanstalk-client/archive/refs/tags/v${BEANSTALK_CLIENT_VERSION}.tar.gz")"
+srcDirName="$(downloadFile "https://github.com/deepfryed/beanstalk-client/archive/refs/tags/v${BEANSTALK_CLIENT_VERSION}.tar.gz" "$BEANSTALK_CLIENT_SHA256")"
 pushd "$srcDirName"
 make -j"$(nproc)" libbeanstalk.so
 install -Dm644 beanstalk.h /usr/include/beanstalk.h
@@ -26,7 +28,7 @@ popd
 rm -rf "$srcDirName"
 
 # https://github.com/asterisk/asterisk/releases
-srcDirName="$(downloadFile "https://github.com/asterisk/asterisk/releases/download/${ASTERISK_VERSION}/asterisk-${ASTERISK_VERSION}.tar.gz")"
+srcDirName="$(downloadFile "https://github.com/asterisk/asterisk/releases/download/${ASTERISK_VERSION}/asterisk-${ASTERISK_VERSION}.tar.gz" "$ASTERISK_SHA256")"
 pushd "$srcDirName"
 
 # format_mp3 sources are fetched separately; it is optional.

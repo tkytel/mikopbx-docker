@@ -25,19 +25,32 @@ Docker image of [MikoPBX](https://github.com/mikopbx/Core) built on Debian from 
 ## How to build
 
 ```bash
-# default
 docker build . -t tkytel/mikopbx-docker:2026.3.40
 
-# All build arguments
+# Own the image's files by the host's www-user (see "How to use image")
 docker build . \
-  --build-arg DEBIAN_CODENAME=trixie \
-  --build-arg PHP_VERSION=8.4 \
-  --build-arg PHALCON_VERSION=5.9.3 \
-  --build-arg ASTERISK_VERSION=22.8.2 \
-  --build-arg MIKOPBX_VERSION=2026.3.40 \
-  --build-arg MIKOPBX_BINARY_IMAGE=mikopbx/mikopbx:latest \
+  --build-arg WWW_UID="$(id -u www-user)" \
+  --build-arg WWW_GID="$(id -g www-user)" \
   -t tkytel/mikopbx-docker:2026.3.40
+
+# Check that the image boots
+scripts/smoke-test.sh tkytel/mikopbx-docker:2026.3.40
 ```
+
+## How to update
+
+1. Change the `ARG` defaults in the [`Dockerfile`](./Dockerfile) (and each
+   `*_SHA256` next to a changed `*_VERSION`), then pin the base images:
+
+   ```bash
+   mise run pinup
+   ```
+
+   `MIKOPBX_VERSION` must be a tag of both [mikopbx/Core](https://github.com/mikopbx/Core)
+   and [mikopbx/mikopbx](https://hub.docker.com/r/mikopbx/mikopbx/tags), which
+   provides the closed-source `mikopbx` PHP extension and `gnatsd`.
+2. Commit, let [ci](./.github/workflows/ci.yaml) build and boot the image, and
+   run [Release Package](./.github/workflows/release.yaml).
 
 ## How to use image
 
@@ -46,8 +59,3 @@ See the comments in [`compose.yaml`](./compose.yaml) and <https://docs.mikopbx.c
 ```bash
 ID_WWW_USER="$(id -u www-user)" ID_WWW_GROUP="$(id -g www-user)" docker compose up -d
 ```
-
-`ID_WWW_USER` and `ID_WWW_GROUP` set the UID and GID of the `www` user in the container,
-which must be able to write to the mounted directories.
-
-The web interface is served on `WEB_PORT` / `WEB_HTTPS_PORT` (login: `admin` / `admin`).

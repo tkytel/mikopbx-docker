@@ -1,26 +1,37 @@
 # syntax=docker/dockerfile:1
 
+# The base images are pinned by digest, so these two cannot be changed with
+# --build-arg alone: change the default here, run `mise run pinup`, and commit.
+# A --build-arg that does not match the pinned image fails the build.
 ARG DEBIAN_CODENAME=trixie
-# The official image provides two closed-source binaries that are not built
-# from github.com/mikopbx/Core: the "mikopbx" PHP extension and gnatsd
-# (patched NATS server with the license API).
-ARG MIKOPBX_BINARY_IMAGE=mikopbx/mikopbx:latest
+# A tag of https://github.com/mikopbx/Core that mikopbx/mikopbx is also tagged with
+ARG MIKOPBX_VERSION=2026.3.40
 
-FROM ${MIKOPBX_BINARY_IMAGE}@sha256:91568202da4a7b862447ea000e31ab9a3c96e94e53b45510056b1fb2eba2a2b4 AS mikopbx-binary
+# The official image of the same version provides two closed-source binaries
+# that are not built from github.com/mikopbx/Core: the "mikopbx" PHP extension
+# and gnatsd (patched NATS server with the license API). They must match Core.
+FROM mikopbx/mikopbx:${MIKOPBX_VERSION}@sha256:91568202da4a7b862447ea000e31ab9a3c96e94e53b45510056b1fb2eba2a2b4 AS mikopbx-binary
 
+ARG MIKOPBX_VERSION
 # The extension lives in /usr/lib64/extensions on amd64 and in
 # /usr/lib/extensions on arm64.
-RUN mkdir -p /export \
-  && cp "$(find /usr/lib/extensions /usr/lib64/extensions -name mikopbx.so 2>/dev/null | head -n 1)" /export/mikopbx.so \
-  && cp /usr/sbin/gnatsd /export/gnatsd
+RUN <<EOF
+set -eu
+if [ "$(cat /etc/version)" != "$MIKOPBX_VERSION" ]; then
+  echo "mikopbx-binary: pinned image is $(cat /etc/version), not $MIKOPBX_VERSION; run mise run pinup" >&2
+  exit 1
+fi
+mkdir -p /export
+cp "$(find /usr/lib/extensions /usr/lib64/extensions -name mikopbx.so 2>/dev/null | head -n 1)" /export/mikopbx.so
+cp /usr/sbin/gnatsd /export/gnatsd
+EOF
 
 # -----------------------------------------------------------------------------
 # MikoPBX Core sources and PHP dependencies
 # -----------------------------------------------------------------------------
 FROM composer:2@sha256:af98f42dfff7c68ba8d53c2164fd9fde1087b7d449514baa38c418b1f6bc4bac AS core
 
-# Any tag, branch or commit of https://github.com/mikopbx/Core
-ARG MIKOPBX_VERSION=2026.3.40
+ARG MIKOPBX_VERSION
 ARG MIKOPBX_REPOSITORY=https://github.com/mikopbx/Core.git
 # https://github.com/openresty/lua-resty-redis/tags
 ARG LUA_RESTY_REDIS_VERSION=0.33
@@ -47,6 +58,7 @@ EOF
 # -----------------------------------------------------------------------------
 FROM debian:${DEBIAN_CODENAME}@sha256:9cc080028c43b27d2074d63a5f9caf7166d731494965616c1a6d2827a004585c AS php-extensions
 
+ARG DEBIAN_CODENAME
 ARG PHP_VERSION=8.4
 # https://pecl.php.net/package/phalcon (Core requires ^5.9.3)
 ARG PHALCON_VERSION=5.9.3
@@ -59,6 +71,7 @@ ARG EVENT_SHA256=5b74554c6370aae8c284c8110fe27e071d3f663953c3eb762ffc429b0a3c83a
 
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 RUN <<EOF
+grep -qx "VERSION_CODENAME=${DEBIAN_CODENAME}" /etc/os-release || { echo "pinned debian image is not ${DEBIAN_CODENAME}; run mise run pinup" >&2; exit 1; }
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   build-essential ca-certificates curl libevent-dev libssl-dev pkg-config \
@@ -96,6 +109,7 @@ EOF
 # -----------------------------------------------------------------------------
 FROM debian:${DEBIAN_CODENAME}@sha256:9cc080028c43b27d2074d63a5f9caf7166d731494965616c1a6d2827a004585c AS asterisk
 
+ARG DEBIAN_CODENAME
 # https://github.com/asterisk/asterisk/releases
 ARG ASTERISK_VERSION=22.8.2
 # asterisk-${ASTERISK_VERSION}.sha256 in the release
@@ -106,6 +120,7 @@ ARG BEANSTALK_CLIENT_SHA256=3bc98f58e08e9fe21508641893a14fe038281546e45613c3aab1
 
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 RUN <<EOF
+grep -qx "VERSION_CODENAME=${DEBIAN_CODENAME}" /etc/os-release || { echo "pinned debian image is not ${DEBIAN_CODENAME}; run mise run pinup" >&2; exit 1; }
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   autoconf automake build-essential bzip2 ca-certificates curl file libtool patch pkg-config python3 subversion \
@@ -135,6 +150,7 @@ RUN rm -rf /staging/var/run /staging/usr/include /staging/usr/share/man
 # -----------------------------------------------------------------------------
 FROM debian:${DEBIAN_CODENAME}@sha256:9cc080028c43b27d2074d63a5f9caf7166d731494965616c1a6d2827a004585c AS busybox
 
+ARG DEBIAN_CODENAME
 # https://busybox.net/downloads/
 ARG BUSYBOX_VERSION=1.38.0
 # busybox-${BUSYBOX_VERSION}.tar.bz2.sha256 on the download page
@@ -142,6 +158,7 @@ ARG BUSYBOX_SHA256=34f9ea6ff8636f2c9241153b9114eefa9e65674a45318ae1ef95bb5f31c53
 
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 RUN <<EOF
+grep -qx "VERSION_CODENAME=${DEBIAN_CODENAME}" /etc/os-release || { echo "pinned debian image is not ${DEBIAN_CODENAME}; run mise run pinup" >&2; exit 1; }
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends build-essential bzip2 ca-certificates curl
 EOF
@@ -164,8 +181,9 @@ EOF
 # -----------------------------------------------------------------------------
 FROM debian:${DEBIAN_CODENAME}-slim@sha256:a99cfc517144bc59b1978475ec53b46ecabec7e43635402ee5b77cc54cd1b20a
 
+ARG DEBIAN_CODENAME
+ARG MIKOPBX_VERSION
 ARG PHP_VERSION=8.4
-ARG MIKOPBX_VERSION=2026.3.40
 # UID/GID of the "www" account, which owns the image's files. When ID_WWW_USER /
 # ID_WWW_GROUP differ, MikoPBX re-owns /usr/www at every boot, copying it into
 # the container layer; build with the host's IDs to avoid that.
@@ -185,6 +203,7 @@ COPY --from=php-extensions /staging/runtime-packages.txt /tmp/php-runtime-packag
 COPY --from=asterisk /staging/runtime-packages.txt /tmp/asterisk-runtime-packages.txt
 
 RUN <<EOF
+grep -qx "VERSION_CODENAME=${DEBIAN_CODENAME}" /etc/os-release || { echo "pinned debian image is not ${DEBIAN_CODENAME}; run mise run pinup" >&2; exit 1; }
 export DEBIAN_FRONTEND=noninteractive
 PACKAGES=(
   # Base tools used by MikoPBX

@@ -264,6 +264,7 @@ touch /.dockerenv
 # Fail the build early if something essential is missing.
 php -m | grep -qx phalcon
 php -m | grep -qx mikopbx
+/bin/sh -c 'exec 12>&-'
 for lib in /usr/sbin/asterisk /offload/asterisk/modules/*.so "$(php -r 'echo ini_get("extension_dir");')"/*.so; do
   if ldd "$lib" | grep -q 'not found'; then
     ldd "$lib"

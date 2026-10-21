@@ -84,6 +84,12 @@ for f in "$rootFs/sbin/"*; do
   install -m755 "$f" "/usr/sbin/$(basename "$f")"
 done
 
+# /bin/sh is BusyBox ash on the official firmware. Core runs every command
+# through a /bin/sh snippet that closes inherited descriptors with
+# "exec 12>&-", which dash cannot parse (it takes single-digit descriptors only).
+dpkg-divert --local --rename --divert /usr/bin/sh.distrib --add /usr/bin/sh
+ln -s busybox /usr/bin/sh
+
 # BusyBox applets Core calls directly from shell scripts.
 ln -sf /bin/busybox /usr/bin/ps
 for applet in ifconfig route ping arp nslookup udhcpc udhcpc6 syslogd logread crond killall vconfig; do

@@ -20,6 +20,7 @@ Docker image of [MikoPBX](https://github.com/mikopbx/Core) built on Debian from 
 
 ## Conformed versions of MikoPBX
 
+- [`2026.3.40`](https://github.com/mikopbx/Core/tree/2026.3.40)
 - [`2026.5.6`](https://github.com/mikopbx/Core/tree/2026.5.6)
 
 ## How to use image
@@ -27,7 +28,9 @@ Docker image of [MikoPBX](https://github.com/mikopbx/Core) built on Debian from 
 See the comments in [`compose.yaml`](./compose.yaml) and <https://docs.mikopbx.com/mikopbx/english/setup/docker>.
 
 ```bash
-ID_WWW_USER="$(id -u www-user)" ID_WWW_GROUP="$(id -g www-user)" docker compose up -d
+ID_WWW_USER="$(id -u www-user)" \
+  ID_WWW_GROUP="$(id -g www-user)" \
+  docker compose up -d
 ```
 
 ## How to build
@@ -35,13 +38,7 @@ ID_WWW_USER="$(id -u www-user)" ID_WWW_GROUP="$(id -g www-user)" docker compose 
 ```bash
 docker build . -t tkytel/mikopbx-docker:2026.5.6
 
-# Own the image's files by the host's www-user (see "How to use image")
-docker build . \
-  --build-arg WWW_UID="$(id -u www-user)" \
-  --build-arg WWW_GID="$(id -g www-user)" \
-  -t tkytel/mikopbx-docker:2026.5.6
-
-# Check that the image boots
+# check
 scripts/smoke-test.sh tkytel/mikopbx-docker:2026.5.6
 ```
 

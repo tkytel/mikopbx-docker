@@ -5,12 +5,12 @@
 # A --build-arg that does not match the pinned image fails the build.
 ARG DEBIAN_CODENAME=trixie
 # A tag of https://github.com/mikopbx/Core that mikopbx/mikopbx is also tagged with
-ARG MIKOPBX_VERSION=2026.5.6
+ARG MIKOPBX_VERSION=2026.6.34
 
 # The official image of the same version provides two closed-source binaries
 # that are not built from github.com/mikopbx/Core: the "mikopbx" PHP extension
 # and gnatsd (patched NATS server with the license API). They must match Core.
-FROM mikopbx/mikopbx:${MIKOPBX_VERSION}@sha256:0fcd3e8e2c026bcf5ef6cdeb936b1829f098074bfd7018064e7d7b1088e71758 AS mikopbx-binary
+FROM mikopbx/mikopbx:${MIKOPBX_VERSION}@sha256:ff5cc0238a4e170bfbf8c0be9a59b58c8affb6fb24b36d1506f5fc0cb41f7691 AS mikopbx-binary
 
 ARG MIKOPBX_VERSION
 # The extension lives in /usr/lib64/extensions on amd64 and in
@@ -60,9 +60,9 @@ FROM debian:${DEBIAN_CODENAME}@sha256:9cc080028c43b27d2074d63a5f9caf7166d7314949
 
 ARG DEBIAN_CODENAME
 ARG PHP_VERSION=8.4
-# https://pecl.php.net/package/phalcon (Core requires ^5.9.3)
-ARG PHALCON_VERSION=5.9.3
-ARG PHALCON_SHA256=2b1983f09b56fc2779509a8ac1df776c368782538a7ef6601c0d4aef9892fe83
+# https://pecl.php.net/package/phalcon (the version in the official image)
+ARG PHALCON_VERSION=5.23.0
+ARG PHALCON_SHA256=34738f486ac6ade23b70c4b5b4d8292b5fda3b334ea119b6b35dbcfab24df50d
 # https://pecl.php.net/package/ev, https://pecl.php.net/package/event
 ARG EV_VERSION=1.2.3
 ARG EV_SHA256=5ea937d3b81c24fd76a6772c2b202a13bc561a4348743a011bd1a7a39eb9fdba
@@ -80,12 +80,9 @@ EOF
 
 COPY libs/ /build/libs/
 
-# GCC 14 turns -Wincompatible-pointer-types into an error, which the C code
-# generated for phalcon 5.9 does not pass.
 RUN <<EOF
 source /build/libs/functions.sh
-CFLAGS='-O2 -Wno-incompatible-pointer-types' MAKEFLAGS="-j$(nproc)" \
-  pecl install "$(downloadPecl "phalcon-${PHALCON_VERSION}" "$PHALCON_SHA256")"
+MAKEFLAGS="-j$(nproc)" pecl install "$(downloadPecl "phalcon-${PHALCON_VERSION}" "$PHALCON_SHA256")"
 EOF
 
 RUN <<EOF

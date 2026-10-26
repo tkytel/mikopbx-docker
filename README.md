@@ -24,7 +24,7 @@ Docker image of [MikoPBX](https://github.com/mikopbx/Core) built on Debian from 
 - [`2026.5.6`](https://github.com/mikopbx/Core/tree/2026.5.6)
 - [`2026.6.34`](https://github.com/mikopbx/Core/tree/2026.6.34)
 
-## How to use image
+## Usage
 
 See the comments in [`compose.yaml`](./compose.yaml) and <https://docs.mikopbx.com/mikopbx/english/setup/docker>.
 
@@ -34,7 +34,9 @@ ID_WWW_USER="$(id -u www-user)" \
   docker compose up -d
 ```
 
-## How to build
+## Development
+
+### How to build
 
 ```bash
 docker build . -t tkytel/mikopbx-docker:2026.6.34
@@ -43,7 +45,7 @@ docker build . -t tkytel/mikopbx-docker:2026.6.34
 scripts/smoke-test.sh tkytel/mikopbx-docker:2026.6.34
 ```
 
-## How to update
+### How to update
 
 1. Change the `ARG` defaults in the [`Dockerfile`](./Dockerfile) (and each
    `*_SHA256` next to a changed `*_VERSION`), then pin the base images:

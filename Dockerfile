@@ -5,12 +5,12 @@
 # A --build-arg that does not match the pinned image fails the build.
 ARG DEBIAN_CODENAME=trixie
 # A tag of https://github.com/mikopbx/Core that mikopbx/mikopbx is also tagged with
-ARG MIKOPBX_VERSION=2026.6.99
+ARG MIKOPBX_VERSION=2026.7.1
 
 # The official image of the same version provides two closed-source binaries
 # that are not built from github.com/mikopbx/Core: the "mikopbx" PHP extension
 # and gnatsd (patched NATS server with the license API). They must match Core.
-FROM mikopbx/mikopbx:${MIKOPBX_VERSION}@sha256:29d4bd79326df9d1d3dc6373437b22ff3aee5b124843f12606616a516111f427 AS mikopbx-binary
+FROM mikopbx/mikopbx:${MIKOPBX_VERSION}@sha256:4171e92e3a8842d1d9aadc6e7cf97c05f75d899dd87e5a861bc0c1e262ff349e AS mikopbx-binary
 
 ARG MIKOPBX_VERSION
 # The extension lives in /usr/lib64/extensions on amd64 and in

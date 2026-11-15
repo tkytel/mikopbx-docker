@@ -5,12 +5,12 @@
 # A --build-arg that does not match the pinned image fails the build.
 ARG DEBIAN_CODENAME=trixie
 # A tag of https://github.com/mikopbx/Core that mikopbx/mikopbx is also tagged with
-ARG MIKOPBX_VERSION=2026.6.34
+ARG MIKOPBX_VERSION=2026.6.99
 
 # The official image of the same version provides two closed-source binaries
 # that are not built from github.com/mikopbx/Core: the "mikopbx" PHP extension
 # and gnatsd (patched NATS server with the license API). They must match Core.
-FROM mikopbx/mikopbx:${MIKOPBX_VERSION}@sha256:ff5cc0238a4e170bfbf8c0be9a59b58c8affb6fb24b36d1506f5fc0cb41f7691 AS mikopbx-binary
+FROM mikopbx/mikopbx:${MIKOPBX_VERSION}@sha256:29d4bd79326df9d1d3dc6373437b22ff3aee5b124843f12606616a516111f427 AS mikopbx-binary
 
 ARG MIKOPBX_VERSION
 # The extension lives in /usr/lib64/extensions on amd64 and in
@@ -56,7 +56,7 @@ EOF
 # -----------------------------------------------------------------------------
 # PECL extensions not packaged by Debian
 # -----------------------------------------------------------------------------
-FROM debian:${DEBIAN_CODENAME}@sha256:9cc080028c43b27d2074d63a5f9caf7166d731494965616c1a6d2827a004585c AS php-extensions
+FROM debian:${DEBIAN_CODENAME}@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6 AS php-extensions
 
 ARG DEBIAN_CODENAME
 ARG PHP_VERSION=8.4
@@ -104,7 +104,7 @@ EOF
 # -----------------------------------------------------------------------------
 # Asterisk
 # -----------------------------------------------------------------------------
-FROM debian:${DEBIAN_CODENAME}@sha256:9cc080028c43b27d2074d63a5f9caf7166d731494965616c1a6d2827a004585c AS asterisk
+FROM debian:${DEBIAN_CODENAME}@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6 AS asterisk
 
 ARG DEBIAN_CODENAME
 # https://github.com/asterisk/asterisk/releases
@@ -145,7 +145,7 @@ RUN rm -rf /staging/var/run /staging/usr/include /staging/usr/share/man
 # BusyBox with all applets: MikoPBX runs "busybox nohup", "busybox lsof", ...
 # which Debian's busybox package does not include.
 # -----------------------------------------------------------------------------
-FROM debian:${DEBIAN_CODENAME}@sha256:9cc080028c43b27d2074d63a5f9caf7166d731494965616c1a6d2827a004585c AS busybox
+FROM debian:${DEBIAN_CODENAME}@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6 AS busybox
 
 ARG DEBIAN_CODENAME
 # https://busybox.net/downloads/
@@ -176,7 +176,7 @@ EOF
 # -----------------------------------------------------------------------------
 # MikoPBX
 # -----------------------------------------------------------------------------
-FROM debian:${DEBIAN_CODENAME}-slim@sha256:a99cfc517144bc59b1978475ec53b46ecabec7e43635402ee5b77cc54cd1b20a
+FROM debian:${DEBIAN_CODENAME}-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
 
 ARG DEBIAN_CODENAME
 ARG MIKOPBX_VERSION

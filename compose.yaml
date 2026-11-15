@@ -15,7 +15,7 @@ services:
   mikopbx:
     # image: mikopbx/mikopbx
     # image: ghcr.io/mikopbx/mikopbx-x86-64
-    image: ghcr.io/tkytel/mikopbx-docker:2026.6.34
+    image: ghcr.io/tkytel/mikopbx-docker:2026.6.99
     build: .
     network_mode: "host"
     cap_add:

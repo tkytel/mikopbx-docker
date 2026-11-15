@@ -23,7 +23,6 @@ Docker image of [MikoPBX](https://github.com/mikopbx/Core) built on Debian from 
 - [`2026.3.40`](https://github.com/mikopbx/Core/tree/2026.3.40)
 - [`2026.5.6`](https://github.com/mikopbx/Core/tree/2026.5.6)
 - [`2026.6.34`](https://github.com/mikopbx/Core/tree/2026.6.34)
-- [`2026.6.99`](https://github.com/mikopbx/Core/tree/2026.6.99)
 - [`2026.7.1`](https://github.com/mikopbx/Core/tree/2026.7.1)
 
 ## Usage

@@ -45,6 +45,25 @@ downloadPecl() {
   echo "$file"
 }
 
+# installPecl NAME-VERSION SHA256 [CONFIGURE_ARGS...]: build a PECL package
+# with phpize and install it into the running PHP.
+installPecl() {
+  local file dir
+  file="$(downloadPecl "$1" "$2")"
+  shift 2
+  dir="$(mktemp -d)"
+  tar xzf "$file" -C "$dir" --strip-components=1 --exclude=package.xml
+  rm "$file"
+  (
+    cd "$dir"
+    phpize
+    ./configure "$@"
+    make -j"$(nproc)"
+    make install
+  )
+  rm -rf "$dir"
+}
+
 # Print Debian packages providing the shared libraries that ELF files under the
 # given directory are linked against. Used to install only runtime libraries
 # into the final image.

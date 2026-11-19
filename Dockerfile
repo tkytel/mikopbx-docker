@@ -54,49 +54,96 @@ echo "$LUA_RESTY_REDIS_SHA256  /tmp/lua/resty/redis.lua" | sha256sum -c -
 EOF
 
 # -----------------------------------------------------------------------------
-# PECL extensions not packaged by Debian
+# PHP and its extensions, built like the official image (Debian's lags behind)
 # -----------------------------------------------------------------------------
-FROM debian:${DEBIAN_CODENAME}@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6 AS php-extensions
+FROM debian:${DEBIAN_CODENAME}@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6 AS php
 
 ARG DEBIAN_CODENAME
-ARG PHP_VERSION=8.4
-# https://pecl.php.net/package/phalcon (the version in the official image)
+# https://www.php.net/downloads.php (sha256 of the .tar.xz)
+ARG PHP_VERSION=8.4.28
+ARG PHP_SHA256=0c8ec360e5dd8154f270b2fd50cd44ecc824e6ee39c85f911312b80d4daecd72
+# https://pecl.php.net/package/<name> (the versions in the official image)
 ARG PHALCON_VERSION=5.23.0
 ARG PHALCON_SHA256=34738f486ac6ade23b70c4b5b4d8292b5fda3b334ea119b6b35dbcfab24df50d
-# https://pecl.php.net/package/ev, https://pecl.php.net/package/event
 ARG EV_VERSION=1.2.3
 ARG EV_SHA256=5ea937d3b81c24fd76a6772c2b202a13bc561a4348743a011bd1a7a39eb9fdba
 ARG EVENT_VERSION=3.1.6
 ARG EVENT_SHA256=5b74554c6370aae8c284c8110fe27e071d3f663953c3eb762ffc429b0a3c83a2
+ARG IGBINARY_VERSION=3.2.16
+ARG IGBINARY_SHA256=8bf25d465abc7973d9e2c9a3039a5f8eea635b23bc1477017ff3999ff95836da
+ARG MSGPACK_VERSION=3.0.1
+ARG MSGPACK_SHA256=e30be355ab79aaea4568692fbd6073fd7c7f50ea8d3cf12edce40fc0c921d868
+ARG REDIS_VERSION=6.3.0
+ARG REDIS_SHA256=0d5141f634bd1db6c1ddcda053d25ecf2c4fc1c395430d534fd3f8d51dd7f0b5
+ARG YAML_VERSION=2.3.0
+ARG YAML_SHA256=bc8404807a3a4dc896b310af21a7f8063aa238424ff77f27eb6ffa88b5874b8a
+ARG MAILPARSE_VERSION=3.2.0
+ARG MAILPARSE_SHA256=cc5111ae17bfa36efcc5ef23dcf75b6501593ac264c196aad3e39cd4ad765332
 
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 RUN <<EOF
 grep -qx "VERSION_CODENAME=${DEBIAN_CODENAME}" /etc/os-release || { echo "pinned debian image is not ${DEBIAN_CODENAME}; run mise run pinup" >&2; exit 1; }
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-  build-essential ca-certificates curl libevent-dev libssl-dev pkg-config \
-  "php${PHP_VERSION}-dev" php-pear
+  autoconf build-essential ca-certificates curl file pkg-config xz-utils \
+  libbz2-dev libcurl4-openssl-dev libevent-dev libgmp-dev libldap-dev libonig-dev libsasl2-dev \
+  libsqlite3-dev libssl-dev libxml2-dev libyaml-dev libzip-dev libzstd-dev zlib1g-dev
 EOF
 
 COPY libs/ /build/libs/
 
+# The same extensions as the official image; everything except opcache and the
+# PECL ones below is built in, so Core's /etc/php.d loads all shared ones.
+WORKDIR /build/src
 RUN <<EOF
-source /build/libs/functions.sh
-MAKEFLAGS="-j$(nproc)" pecl install "$(downloadPecl "phalcon-${PHALCON_VERSION}" "$PHALCON_SHA256")"
+curl -fsSL -o /tmp/php.tar.xz "https://www.php.net/distributions/php-${PHP_VERSION}.tar.xz"
+echo "$PHP_SHA256  /tmp/php.tar.xz" | sha256sum -c -
+tar xJf /tmp/php.tar.xz --strip-components=1
+rm /tmp/php.tar.xz
+CFLAGS='-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64' \
+  LDFLAGS='-Wl,-O1 -pie' \
+  ./configure \
+  --prefix=/usr --sysconfdir=/etc --localstatedir=/var \
+  --with-config-file-path=/etc --with-config-file-scan-dir=/etc/php.d \
+  --with-libdir="lib/$(gcc -print-multiarch)" \
+  --disable-cgi --disable-phpdbg --without-pear \
+  --enable-fpm --enable-opcache \
+  --enable-bcmath --enable-ftp --enable-mbstring --enable-pcntl --enable-shmop --enable-sockets \
+  --with-bz2 --with-curl --with-gettext --with-gmp --with-ldap --with-ldap-sasl \
+  --with-openssl --with-zip --with-zlib
+make -j"$(nproc)"
+make install
+make install INSTALL_ROOT=/staging
+cd /
+rm -rf /build/src
 EOF
 
 RUN <<EOF
 source /build/libs/functions.sh
-{ yes '' || :; } | pecl install "$(downloadPecl "ev-${EV_VERSION}" "$EV_SHA256")"
-pecl install -D 'enable-event-debug="no" enable-event-sockets="yes" with-event-libevent-dir="/usr" with-event-pthreads="no" with-event-extra="yes" with-event-openssl="yes" with-event-ns="no" with-openssl-dir="no"' \
-  "$(downloadPecl "event-${EVENT_VERSION}" "$EVENT_SHA256")"
+installPecl "igbinary-${IGBINARY_VERSION}" "$IGBINARY_SHA256"
+installPecl "msgpack-${MSGPACK_VERSION}" "$MSGPACK_SHA256"
+installPecl "redis-${REDIS_VERSION}" "$REDIS_SHA256" \
+  --enable-redis-igbinary --enable-redis-msgpack --enable-redis-zstd --with-libzstd
+installPecl "yaml-${YAML_VERSION}" "$YAML_SHA256"
+installPecl "mailparse-${MAILPARSE_VERSION}" "$MAILPARSE_SHA256"
+installPecl "ev-${EV_VERSION}" "$EV_SHA256"
+installPecl "event-${EVENT_VERSION}" "$EVENT_SHA256" \
+  --with-event-core --with-event-extra --with-event-openssl --enable-event-sockets \
+  --with-event-libevent-dir=/usr --without-event-pthreads --without-event-ns
+EOF
+
+RUN <<EOF
+source /build/libs/functions.sh
+installPecl "phalcon-${PHALCON_VERSION}" "$PHALCON_SHA256"
 EOF
 
 RUN <<EOF
 extensionDir="$(php-config --extension-dir)"
-for ext in phalcon ev event; do
-  install -Dm644 "${extensionDir}/${ext}.so" "/staging${extensionDir}/${ext}.so"
-done
+cp "$extensionDir"/*.so "/staging${extensionDir}/"
+# Development files, and /var/run, which is a symlink to /run on Debian.
+rm -rf /staging/etc/php-fpm.* /staging/usr/bin/php-config /staging/usr/bin/phpize \
+  /staging/usr/include /staging/usr/lib/php/build /staging/usr/share/man /staging/var
+strip --strip-unneeded /staging/usr/bin/php /staging/usr/sbin/php-fpm "/staging${extensionDir}"/*.so
 source /build/libs/functions.sh
 listRuntimePackages /staging >/staging/runtime-packages.txt
 EOF
@@ -180,7 +227,6 @@ FROM debian:${DEBIAN_CODENAME}-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f5860
 
 ARG DEBIAN_CODENAME
 ARG MIKOPBX_VERSION
-ARG PHP_VERSION=8.4
 # UID/GID of the "www" account, which owns the image's files. When ID_WWW_USER /
 # ID_WWW_GROUP differ, MikoPBX re-owns /usr/www at every boot, copying it into
 # the container layer; build with the host's IDs to avoid that.
@@ -196,7 +242,7 @@ LABEL org.opencontainers.image.version="${MIKOPBX_VERSION}"
 
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 
-COPY --from=php-extensions /staging/runtime-packages.txt /tmp/php-runtime-packages.txt
+COPY --from=php /staging/runtime-packages.txt /tmp/php-runtime-packages.txt
 COPY --from=asterisk /staging/runtime-packages.txt /tmp/asterisk-runtime-packages.txt
 
 RUN <<EOF
@@ -206,12 +252,6 @@ PACKAGES=(
   # Base tools used by MikoPBX
   bash ca-certificates cpio curl e2fsprogs gdisk iproute2 ipset iptables locales logrotate lsof
   mtr-tiny openssl parted pv sqlite3 sysstat tcpdump tzdata xz-utils bzip2
-  # PHP
-  "php${PHP_VERSION}-cli" "php${PHP_VERSION}-fpm" "php${PHP_VERSION}-opcache"
-  "php${PHP_VERSION}-bcmath" "php${PHP_VERSION}-bz2" "php${PHP_VERSION}-curl" "php${PHP_VERSION}-gmp"
-  "php${PHP_VERSION}-igbinary" "php${PHP_VERSION}-ldap" "php${PHP_VERSION}-mailparse"
-  "php${PHP_VERSION}-mbstring" "php${PHP_VERSION}-msgpack" "php${PHP_VERSION}-redis"
-  "php${PHP_VERSION}-sqlite3" "php${PHP_VERSION}-xml" "php${PHP_VERSION}-yaml" "php${PHP_VERSION}-zip"
   # Web server
   nginx libnginx-mod-http-lua libnginx-mod-nchan libnginx-mod-http-headers-more-filter
   # Services managed by MikoPBX
@@ -227,7 +267,7 @@ apt-get clean
 rm -rf /var/lib/apt/lists/* /tmp/*-runtime-packages.txt
 EOF
 
-COPY --from=php-extensions /staging/ /
+COPY --from=php /staging/ /
 COPY --from=asterisk /staging/ /
 COPY --from=busybox /staging/ /
 COPY --from=mikopbx-binary /export/gnatsd /usr/sbin/gnatsd
@@ -251,7 +291,7 @@ for cmd in adduser addgroup deluser delgroup; do
   ln -s /usr/local/lib/mikopbx-docker/busybox-user-tools.sh "/usr/sbin/$cmd"
 done
 
-MIKOPBX_VERSION="$MIKOPBX_VERSION" PHP_VERSION="$PHP_VERSION" WWW_UID="$WWW_UID" WWW_GID="$WWW_GID" \
+MIKOPBX_VERSION="$MIKOPBX_VERSION" WWW_UID="$WWW_UID" WWW_GID="$WWW_GID" \
   /tmp/99-install-mikopbx.sh
 rm -rf /tmp/*
 

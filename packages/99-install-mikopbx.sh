@@ -4,7 +4,6 @@
 set -euxo pipefail
 
 : "${MIKOPBX_VERSION:?}"
-: "${PHP_VERSION:?}"
 : "${WWW_UID:?}"
 : "${WWW_GID:?}"
 
@@ -47,28 +46,10 @@ mv /tmp/nginx-modules-enabled /etc/nginx/modules-enabled
 # for the output of "nginx", hangs at boot.
 sed -i '1i include /etc/nginx/modules-enabled/*.conf;\nerror_log /var/log/nginx_error.log;' /etc/nginx/nginx.conf
 
-# PHP: Core expects /etc/php.ini and /etc/php.d; point Debian's SAPI dirs there.
+# PHP is built with Core's layout: /etc/php.ini, /etc/php.d and /etc/php-fpm.conf.
 mkdir -p /etc/php.d /var/lib/php/session
 chown www:www /var/lib/php/session
 cp -R "$rootFs/etc/php.d/." /etc/php.d/
-coreExtensions=" $(sed -n 's/^\(zend_\)\?extension=\(.*\)\.so$/\2/p' /etc/php.d/*.ini | tr '\n' ' ') "
-for ini in "/etc/php/${PHP_VERSION}/mods-available/"*.ini; do
-  name="$(basename "$ini" .ini)"
-  # Extensions loaded by Core's own ini files must not be loaded twice.
-  if [[ $coreExtensions == *" $name "* ]] || [[ $name == xdebug ]]; then
-    continue
-  fi
-  # Load them before Core's ones: event.so requires sockets.so, etc.
-  ln -s "$ini" "/etc/php.d/00-${name}.ini"
-done
-for sapi in cli fpm; do
-  rm -rf "/etc/php/${PHP_VERSION}/${sapi}/conf.d" "/etc/php/${PHP_VERSION}/${sapi}/php.ini"
-  ln -s /etc/php.d "/etc/php/${PHP_VERSION}/${sapi}/conf.d"
-  ln -s /etc/php.ini "/etc/php/${PHP_VERSION}/${sapi}/php.ini"
-done
-rm -f "/etc/php/${PHP_VERSION}/fpm/php-fpm.conf"
-ln -s /etc/php-fpm.conf "/etc/php/${PHP_VERSION}/fpm/php-fpm.conf"
-ln -sf "/usr/sbin/php-fpm${PHP_VERSION}" /usr/sbin/php-fpm
 
 # Rootless Docker cannot apply its AppArmor profile, so a host profile attached
 # to /usr/sbin/rsyslogd (Ubuntu ships one) confines the container's rsyslogd and

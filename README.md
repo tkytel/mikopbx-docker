@@ -4,7 +4,7 @@
 
 [image tags]: <https://ghcr-badge.egpl.dev/tkytel/mikopbx-docker/tags?trim=major>
 [image latest]: <https://ghcr-badge.egpl.dev/tkytel/mikopbx-docker/latest_tag?trim=major&label=latest>
-[image size]: <https://ghcr-badge.egpl.dev/tkytel/mikopbx-docker/size?tag=2026.7.1>
+[image size]: <https://ghcr-badge.egpl.dev/tkytel/mikopbx-docker/size?tag=2026.8.2>
 
 [![Release Package](
   <https://github.com/tkytel/mikopbx-docker/actions/workflows/release.yaml/badge.svg>
@@ -24,6 +24,7 @@ Docker image of [MikoPBX](https://github.com/mikopbx/Core) built on Debian from 
 - [`2026.5.6`](https://github.com/mikopbx/Core/tree/2026.5.6)
 - [`2026.6.34`](https://github.com/mikopbx/Core/tree/2026.6.34)
 - [`2026.7.1`](https://github.com/mikopbx/Core/tree/2026.7.1)
+- [`2026.8.2`](https://github.com/mikopbx/Core/tree/2026.8.2)
 
 ## Usage
 
@@ -40,10 +41,10 @@ ID_WWW_USER="$(id -u www-user)" \
 ### How to build
 
 ```bash
-docker build . -t tkytel/mikopbx-docker:2026.7.1
+docker build . -t tkytel/mikopbx-docker:2026.8.2
 
 # check
-scripts/smoke-test.sh tkytel/mikopbx-docker:2026.7.1
+scripts/smoke-test.sh tkytel/mikopbx-docker:2026.8.2
 ```
 
 ### How to update
